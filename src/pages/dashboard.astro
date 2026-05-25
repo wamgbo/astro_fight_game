@@ -1,0 +1,70 @@
+---
+export const prerender = false;
+import Layout from "../layouts/Layout.astro";
+import db from "../db/db.ts"; // 確保你有引入你的 db
+import { actions } from "astro:actions";
+
+const session = Astro.cookies.get("user_session");
+if (!session) return Astro.redirect("/login");
+
+// 1. 取得所有房間清單
+const rooms = db.prepare("SELECT * FROM rooms").all();
+---
+
+<Layout>
+	<h1>歡迎, {session.value}</h1>
+
+	<hr />
+
+	<h2>加入房間</h2>
+	<ul>
+		{
+			rooms.map((room: any) => (
+				<li>
+					{room.name}
+					<button onclick={`joinRoom('${room.room_id}')`}>
+						加入
+					</button>
+				</li>
+			))
+		}
+	</ul>
+
+	<hr />
+
+	<form id="logoutForm">
+		<button type="submit">登出</button>
+	</form>
+
+	<script >
+		import { actions } from "astro:actions";
+
+		// 監聽所有加入按鈕
+		document.querySelectorAll(".join-btn").forEach((button) => {
+			button.addEventListener("click", async (e) => {
+				const target = e.target as HTMLButtonElement;
+				const roomId = target.getAttribute("data-id");
+
+				// 執行 Action
+				const result = await actions.joinRoom({ roomId: roomId! });
+
+				if (result.error) {
+					alert("加入失敗: " + result.error.message);
+				} else {
+					window.location.href = `/room/${roomId}`;
+				}
+			});
+		});
+	</script>
+
+	<script>
+		// 登出邏輯
+		import { actions } from "astro:actions";
+		const logoutForm = document.getElementById("logoutForm");
+		logoutForm?.addEventListener("submit", async (e) => {
+			e.preventDefault();
+			await actions.logout();
+			window.location.href = "/login";
+		});
+	</script>
+</Layout>

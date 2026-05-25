@@ -1,0 +1,38 @@
+---
+import { actions } from "astro:actions";
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout>
+    <form id="createRoomForm">
+        <label>房間名稱:</label>
+        <input type="text" name="name" required />
+
+        <label>你的名字:</label>
+        <input type="text" name="username" required />
+
+        <button type="submit">立即創建</button>
+    </form>
+
+    <script>
+        import { actions } from "astro:actions";
+
+        const form = document.querySelector(
+            "#createRoomForm",
+        ) as HTMLFormElement;
+        form?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            const result = await actions.createRoom(data);
+
+            if (result.error) {
+                alert("創建失敗: " + result.error.message);
+            } else if (result.data) {
+                window.location.href = `/room/${result.data.roomId}`;
+            }
+        });
+    </script>
+</Layout>

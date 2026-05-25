@@ -1,0 +1,26 @@
+---
+export const prerender = false;
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout>
+	<h1>登入</h1>
+	<form id="loginForm">
+		<input name="username" placeholder="使用者名稱" required />
+		<button type="submit">登入</button>
+	</form>
+
+	<script>
+		import { actions } from "astro:actions";
+		const form = document.getElementById("loginForm") as HTMLFormElement;
+
+		form?.addEventListener("submit", async (e) => {
+			e.preventDefault();
+			const data = Object.fromEntries(new FormData(form));
+			const { error } = await actions.login(data);
+
+			if (error) alert("登入失敗");
+			else window.location.href = "/dashboard";
+		});
+	</script>
+</Layout>

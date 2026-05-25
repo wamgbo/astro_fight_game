@@ -1,0 +1,10 @@
+---
+import { actions } from "astro:actions";
+---
+
+<form method="POST" action={actions.submitForm}>
+	<input name="username" />
+	<input name="email" />
+	<input name="age" type="number" />
+	<button type="submit">送出</button>
+</form>

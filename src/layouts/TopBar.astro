@@ -1,0 +1,114 @@
+---
+// src/components/TopBar.astro
+const { brandName = "MyWebsite" } = Astro.props;
+
+// 導覽列的選單資料
+const navItems = [
+  { text: "首頁", href: "/" },
+  { text: "關於我們", href: "/demo" },
+  { text: "最新消息", href: "/news" },
+  { text: "聯絡我們", href: "/contact" },
+];
+---
+
+<header class="top-bar">
+  <div class="container">
+    <!-- Logo 區域 -->
+    <a href="/" class="brand">{brandName}</a>
+
+    <!-- 導覽選單 -->
+    <nav class="nav-links">
+      {navItems.map((item) => <a href={item.href}>{item.text}</a>)}
+    </nav>
+  </div>
+</header>
+
+<script>
+  const topBar = document.querySelector(".top-bar");
+
+  if (topBar) {
+    window.addEventListener("mousemove", (event) => {
+      // event.clientY 可以抓到滑鼠在視窗中的 Y 軸位置 (單位: 像素)
+      if (event.clientY < 30) {
+        topBar.classList.add("show"); // 滑鼠接近頂端：顯示
+      } else if (event.clientY > 70) {
+        topBar.classList.remove("show"); // 滑鼠離開上半部：隱藏
+      }
+    });
+  }
+</script>
+<style>
+  /* 頂部導覽列主體 */
+  .top-bar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    position: fixed; /* 🔥 改為 fixed 才能懸浮在最上層而不推擠下方遊戲畫面 */
+    width: 100%; /* 🔥 確保寬度撐滿 */
+    top: 0;
+    left: 0; /* 🔥 修正 fixed 定位點 */
+    z-index: 100;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+    /* 🔥 預設往上移 100% 藏起來，並加上平滑滑出效果 */
+    transform: translateY(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  /* 🔥 當觸發此類別時，滑順地向下顯示出來 */
+  .top-bar.show {
+    transform: translateY(0);
+  }
+
+  /* 限制最大寬度並置中 */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    height: 64px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Logo 樣式 */
+  .brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+    text-decoration: none;
+    letter-spacing: -0.025em;
+  }
+
+  /* 選單連結區塊 */
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  /* 單個連結樣式 */
+  .nav-links a {
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  /* 滑鼠懸停效果 */
+  .nav-links a:hover {
+    color: #2563eb; /* 現代感藍色 */
+  }
+
+  /* 手機版簡單適應（選單字體縮小、間距變窄） */
+  @media (max-width: 640px) {
+    .container {
+      padding: 0 1rem;
+    }
+    .nav-links {
+      gap: 1rem;
+    }
+    .nav-links a {
+      font-size: 0.875rem;
+    }
+  }
+</style>
