@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Astro Basics</title>
+	</head>
+	<body>
+		<!-- frame: Board -->
+		<!-- 將外層改為 button，並加上 type="button" 確保瀏覽器正確識別 -->
+		<button
+			type="button"
+			id="my-figma-btn"
+			class="frame board-121d6ebc3253 cursor-pointer border-0 p-0 bg-transparent block w-full text-left"
+		>
+			<div class="shape rect rectangle-121d72b0758c"></div>
+			<div class="shape rect rectangle-121e0a08d613"></div>
+			<div class="shape rect rectangle-121e132c58c1"></div>
+			<div class="shape rect rectangle-121e183989c7"></div>
+			<div class="shape rect rectangle-121e21e84c59"></div>
+		</button>
+
+		<script>
+			// 抓取剛剛設定的按鈕 ID
+			const button = document.getElementById("my-figma-btn");
+
+			// 確保按鈕存在後，綁定點擊事件（Click Event）
+			if (button) {
+				button.addEventListener("click", () => {
+					// 這裡寫你想讓它觸發的動作，例如彈出一個視窗
+					alert("按鈕被點擊了！Astro 測試成功 🚀");
+
+					// 如果你想跳轉到其他網站，可以把上面那行換成下面這行：
+					window.location.href = "https://google.com";
+				});
+			}
+		</script>
+	</body>
+</html>
+
+<style>
+	html,
+	body {
+		margin: 0;
+		min-height: 100%;
+		min-width: 100%;
+		padding: 0;
+	}
+
+	body {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100vw;
+		min-height: 100vh;
+	}
+
+	* {
+		box-sizing: border-box;
+	}
+
+	.text-node {
+		background-clip: text !important;
+		-webkit-background-clip: text !important;
+	}
+
+	/* Board */
+	.board-121d6ebc3253 {
+		position: relative;
+		width: 1031px;
+		height: 615px;
+		background: #c8b4b4ff;
+		overflow: hidden;
+		z-index: 0;
+	}
+
+	/* Rectangle */
+	.rectangle-121e21e84c59 {
+		position: absolute;
+		left: 859px;
+		top: 64.67px;
+		width: 93px;
+		height: 40px;
+		background: #b1b2b5ff;
+		border: 1px solid #000000ff;
+		border-start-start-radius: 25px;
+		border-start-end-radius: 25px;
+		border-end-start-radius: 25px;
+		border-end-end-radius: 25px;
+		box-shadow: 4px 4px 4px 0px #00000033;
+		filter: blur(2px);
+	}
+
+	/* Rectangle */
+	.rectangle-121e183989c7 {
+		position: absolute;
+		left: 548px;
+		top: 65.33px;
+		width: 194px;
+		height: 40px;
+		background: #b1b2b5ff;
+		border: 1px solid #000000ff;
+		border-start-start-radius: 25px;
+		border-start-end-radius: 25px;
+		border-end-start-radius: 25px;
+		border-end-end-radius: 25px;
+		box-shadow: 4px 4px 4px 0px #00000033;
+		filter: blur(2px);
+	}
+
+	/* Rectangle */
+	.rectangle-121e132c58c1 {
+		position: absolute;
+		left: 309px;
+		top: 65px;
+		width: 194px;
+		height: 40px;
+		background: #b1b2b5ff;
+		border: 1px solid #000000ff;
+		border-start-start-radius: 25px;
+		border-start-end-radius: 25px;
+		border-end-start-radius: 25px;
+		border-end-end-radius: 25px;
+		box-shadow: 4px 4px 4px 0px #00000033;
+		filter: blur(2px);
+	}
+
+	/* Rectangle */
+	.rectangle-121e0a08d613 {
+		position: absolute;
+		left: 70px;
+		top: 65px;
+		width: 194px;
+		height: 40px;
+		background: #b1b2b5ff;
+		border: 1px solid #000000ff;
+		border-start-start-radius: 25px;
+		border-start-end-radius: 25px;
+		border-end-start-radius: 25px;
+		border-end-end-radius: 25px;
+		box-shadow: 4px 4px 4px 0px #00000033;
+		filter: blur(2px);
+	}
+
+	/* Rectangle */
+	.rectangle-121d72b0758c {
+		position: absolute;
+		left: 37px;
+		top: 44px;
+		width: 965px;
+		height: 80px;
+		background: #b1b2b5ff;
+		border: 1px solid #000000ff;
+		border-start-start-radius: 25px;
+		border-start-end-radius: 25px;
+		border-end-start-radius: 25px;
+		border-end-end-radius: 25px;
+		box-shadow: 4px 4px 4px 0px #00000033;
+		filter: blur(2px);
+	}
+</style>
