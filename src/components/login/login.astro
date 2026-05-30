@@ -1,0 +1,147 @@
+---
+// src/pages/login.astro
+let errorMessage = "";
+
+try {
+	const data = await Astro.request.formData();
+	const username = data.get("username");
+	const password = data.get("password");
+
+	// 💡 註：你寫了 || true 代表不管輸入什麼都會過關，測試完記得拿掉喔！
+	if ((username === "admin" && password === "123456") || true) {
+		const sessionToken = "user_secret_token_abc123";
+
+		// 寫入 Cookie
+		Astro.cookies.set("user_session", sessionToken, {
+			path: "/",
+			httpOnly: true,
+			secure: true,
+			maxAge: 60 * 60 * 24 * 7,
+		});
+
+		return Astro.redirect("/");
+	} else {
+		errorMessage = "帳號或密碼錯誤！";
+	}
+} catch (error) {
+	console.error("頁面 POST 解析錯誤:", error);
+	errorMessage = "系統發生錯誤，請稍後再試。";
+}
+---
+
+<!doctype html>
+<html lang="zh-TW">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>遊戲登入</title>
+	</head>
+	<body>
+		<div class="login-container">
+			<h2>登入開始遊戲</h2>
+
+			<form method="POST">
+				{
+					errorMessage && (
+						<p style="color: red; font-weight: bold; text-align: center;">
+							{errorMessage}
+						</p>
+					)
+				}
+
+				<div class="input-group">
+					<input
+						type="text"
+						name="username"
+						placeholder="請輸入帳號 (admin)"
+						required
+					/>
+				</div>
+				<div class="input-group">
+					<input
+						type="password"
+						name="password"
+						placeholder="請輸入密碼 (123456)"
+						required
+					/>
+				</div>
+				<button type="submit">登入</button>
+			</form>
+		</div>
+	</body>
+</html>
+
+<style>
+	/* 讓登入畫面在螢幕正中央 */
+	body {
+		margin: 0;
+		padding: 0;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 100vh;
+		background-color: #1a252f; /* 跟遊戲畫面配一套的暗色底 */
+		font-family: sans-serif;
+	}
+
+	.login-container {
+		background: #ffffff;
+		padding: 2.5rem;
+		border-radius: 12px;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+		width: 100%;
+		max-width: 400px;
+		text-align: center;
+	}
+
+	h2 {
+		margin-bottom: 2rem;
+		color: #2c3e50;
+	}
+
+	.input-group {
+		margin-bottom: 1.25rem;
+	}
+
+	input {
+		width: 100%;
+		padding: 0.8rem;
+		border: 2px solid #e5e7eb;
+		border-radius: 6px;
+		font-size: 1rem;
+		outline: none;
+		transition: border-color 0.2s;
+	}
+
+	input:focus {
+		border-color: #3498db; /* 聚焦時變成藍框 */
+	}
+
+	button {
+		width: 100%;
+		padding: 0.8rem;
+		background-color: #2ecc71; /* 按鈕走綠色邊框風格 */
+		color: white;
+		border: none;
+		border-radius: 6px;
+		font-size: 1rem;
+		font-weight: bold;
+		cursor: pointer;
+		transition: background-color 0.2s;
+		margin-top: 0.5rem;
+	}
+
+	button:hover {
+		background-color: #27ae60;
+	}
+
+	.error-msg {
+		color: #e74c3c;
+		background-color: #fde8e8;
+		padding: 0.6rem;
+		border-radius: 6px;
+		font-size: 0.9rem;
+		margin-bottom: 1rem;
+		font-weight: bold;
+	}
+</style>

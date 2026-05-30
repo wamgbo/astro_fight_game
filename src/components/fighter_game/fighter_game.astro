@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<title>Box Fight System - Synchronized Animation Fix</title>
+
+		<style>
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+				background: #222; /* 換成深色背景，更容易檢查圖片去背是否完美 */
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				font-family: sans-serif;
+			}
+
+			.game-board {
+				position: relative;
+				width: 1200px;
+				height: 700px;
+				background: url(src/bg.png);
+				/* background: #f4f4f4; */
+				border: 3px solid #2ecc71;
+				overflow: hidden;
+			}
+
+			/* ========================================== */
+			/* 角色基礎樣式 (完美支援去背 PNG) */
+			/* ========================================== */
+			.box {
+				width: 400px;
+				height: 1000px;
+
+				position: absolute;
+
+				background-repeat: no-repeat;
+				background-position: center;
+				background-size: contain;
+			}
+			.hitbox {
+				position: absolute;
+
+				width: 140px;
+				height: 320px;
+
+				left: 135px;
+				top: 340px;
+
+				background: rgba(255, 0, 0, 0.2);
+			}
+
+			/* ------------------------------------------ */
+			/* 玩家 1 (藍方) 預設去背站姿 */
+			/* ------------------------------------------ */
+			#box1.is-attacking {
+				/* ⚠️ 修正重點：將總時間從 2s 修改為 0.8s，並維持定格效果 */
+				animation: attack-anim 0.3s steps(1) forwards;
+			}
+			#box1.is-walking {
+				animation: walk-anim 0.5s steps(5) infinite;
+			}
+
+			/* ------------------------------------------ */
+			/* 玩家 2 (紅方) 預設去背站姿 (鏡像翻轉) */
+			/* ------------------------------------------ */
+			#box2 {
+				background-image: url("src/idle/1.png"); /* 使用相同去背圖 */
+				transform: scaleX(-1); /* 讓去背角色面向左邊 */
+			}
+			#box2.is-attacking {
+				/* ⚠️ 修正重點：將這裡從 0.2s 統一修改為與玩家1相同的 0.8s！ */
+				animation: attack-anim 0.3s steps(1) forwards;
+				transform: scaleX(-1); /* 確保攻擊時維持面向左邊 */
+			}
+			#box2.is-walking {
+				animation: walk-anim 0.5s steps(5) infinite;
+				transform: scaleX(-1);
+			}
+
+			/* ========================================== */
+			/* 🎬 CSS Keyframes 連續動畫百分比調配 (總長度 0.8s) */
+			/* ========================================== */
+			@keyframes attack-anim {
+				0% {
+					background-image: url("src/attack/1.png"); /* 0.0s */
+				}
+				10% {
+					background-image: url("src/attack/2.png"); /* 0.08s 蓄力 */
+				}
+				15% {
+					background-image: url("src/attack/3.png"); /* 0.12s 出拳中 */
+				}
+				80% {
+					background-image: url("src/attack/4.png"); /* 0.16s 拳頭完全伸直！！！ */
+				}
+				100% {
+					background-image: url("src/attack/4.png"); /* 從 20% 一直停到 100% (定格長達 0.64 秒！) */
+				}
+			}
+
+			/* ========================================== */
+			/* 攻擊判定盒 (可隨時換成去背的斬擊光芒特效) */
+			/* ========================================== */
+			.attack {
+				position: absolute;
+				width: 120px;
+				height: 80px;
+				background: rgba(
+					241,
+					196,
+					15,
+					0.3
+				); /* 預設黃色半透明，方便你除錯高度 */
+				border-radius: 8px;
+				display: none;
+			}
+
+			.instructions {
+				position: absolute;
+				top: 10px;
+				color: #555;
+				font-size: 14px;
+				text-align: center;
+				width: 100%;
+			}
+			/* Idle 循環動畫定義 */
+			@keyframes idle-anim {
+				0% {
+					background-image: url("src/idle/1.png");
+				}
+				50% {
+					background-image: url("src/idle/2.png");
+				} /* 假設你有 2 張 idle 圖 */
+				100% {
+					background-image: url("src/idle/1.png");
+				}
+			}
+			@keyframes walk-anim {
+				0% {
+					background-image: url("src/walk/1.png");
+				}
+				20% {
+					background-image: url("src/walk/2.png");
+				}
+				40% {
+					background-image: url("src/walk/3.png");
+				}
+				60% {
+					background-image: url("src/walk/4.png");
+				}
+				80% {
+					background-image: url("src/walk/5.png");
+				}
+				100% {
+					background-image: url("src/walk/2.png");
+				}
+			}
+
+			/* 走路狀態 (當按下移動鍵時套用) */
+
+			/* 預設狀態：套用 Idle 循環動畫 */
+			.box {
+				animation: idle-anim 1s steps(1) infinite;
+			}
+
+			.box.is-walking {
+				animation: walk-anim 0.5s steps(1) infinite;
+			}
+			/* 攻擊時：暫停 Idle 動畫，改為攻擊動畫 */
+			.box.is-attacking {
+				animation: attack-anim 0.8s steps(1) forwards;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="game-board">
+			<div class="instructions">
+				玩家 1: A/D 移動, S 攻擊 | 玩家 2: J/L 移動, K 攻擊
+			</div>
+			<div id="box1" class="box">
+				<div class="hitbox"></div>
+			</div>
+			<div id="box2" class="box">
+				<div class="hitbox"></div>
+			</div>
+
+			<div id="attack1" class="attack"></div>
+			<div id="attack2" class="attack"></div>
+		</div>
+
+		<script>
+			// 1. 初始化狀態與位置物件
+			const keys = {};
+			const p1 = { x: 10, y: 200 };
+			const p2 = { x: 800, y: 200 };
+
+			window.addEventListener(
+				"keydown",
+				(e) => (keys[e.key.toLowerCase()] = true),
+			);
+			window.addEventListener(
+				"keyup",
+				(e) => (keys[e.key.toLowerCase()] = false),
+			);
+
+			// 2. 移動系統
+			function updateBox(id, map, pos) {
+				const box = document.getElementById(id);
+				const speed = 2;
+				const isMoving = keys[map.left] || keys[map.right];
+
+				if (keys[map.left]) pos.x -= speed;
+				if (keys[map.right]) pos.x += speed;
+
+				pos.x = Math.max(0, Math.min(800, pos.x));
+				box.style.left = pos.x + "px";
+
+				if (!box.classList.contains("is-attacking")) {
+					if (isMoving) {
+						if (!box.classList.contains("is-walking"))
+							box.classList.add("is-walking");
+					} else {
+						if (box.classList.contains("is-walking"))
+							box.classList.remove("is-walking");
+					}
+				}
+			}
+
+			// 3. 攻擊與碰撞系統 (邏輯保持你的優化版)
+			function setupAttack(boxId, atkId, key, direction, pos) {
+				const box = document.getElementById(boxId);
+				const atk = document.getElementById(atkId);
+				let attacking = false;
+
+				window.addEventListener("keydown", (e) => {
+					if (e.key.toLowerCase() === key && !attacking) {
+						attacking = true;
+
+						// 1. 記錄原始位置
+						const originalX = pos.x;
+						const dashDistance = 80; // 想要瞬移的距離
+
+						// 2. 瞬間移動：攻擊開始時直接增加座標
+						pos.x +=
+							direction === "right"
+								? dashDistance
+								: -dashDistance;
+						box.style.left = pos.x + "px";
+
+						box.classList.add("is-attacking");
+
+						// 3. 動畫結束後瞬間傳送回來
+						setTimeout(() => {
+							// 瞬間傳送回原位
+							pos.x = originalX;
+							box.style.left = pos.x + "px";
+
+							atk.style.display = "none";
+							box.classList.remove("is-attacking");
+							box.classList.remove("is-walking");
+
+							box.style.animation = "none";
+							box.offsetHeight;
+							box.style.animation = "";
+							attacking = false;
+						}, 300); // 與 CSS 動畫長度對應
+
+						// 攻擊判定盒出現
+						setTimeout(() => {
+							if (attacking) atk.style.display = "block";
+						}, 160);
+					}
+				});
+
+				// 追蹤器維持不變
+				function follow() {
+					atk.style.left =
+						(direction === "right" ? pos.x + 80 : pos.x - 80) +
+						"px";
+					atk.style.top = pos.y + 40 + "px";
+					requestAnimationFrame(follow);
+				}
+				follow();
+			}
+
+			function preventCollision(aId, bId, posA, posB) {
+				const a = document.getElementById(aId).querySelector(".hitbox");
+				const b = document.getElementById(bId).querySelector(".hitbox");
+
+				function loop() {
+					const r1 = a.getBoundingClientRect();
+					const r2 = b.getBoundingClientRect();
+
+					if (
+						r1.left < r2.right &&
+						r1.right > r2.left &&
+						r1.top < r2.bottom &&
+						r1.bottom > r2.top
+					) {
+						const dx =
+							r1.left + r1.width / 2 - (r2.left + r2.width / 2);
+						const overlapX =
+							r1.width / 2 + r2.width / 2 - Math.abs(dx);
+						const push = overlapX / 2;
+						if (dx > 0) {
+							posA.x += push;
+							posB.x -= push;
+						} else {
+							posA.x -= push;
+							posB.x += push;
+						}
+					}
+					requestAnimationFrame(loop);
+				}
+				loop();
+			}
+
+			function hitCheck(atkId, targetId) {
+				const atk = document.getElementById(atkId);
+				const target = document.getElementById(targetId);
+				if (atk.style.display !== "block") return false;
+				const ra = atk.getBoundingClientRect();
+				const rt = target.getBoundingClientRect();
+				return (
+					ra.left < rt.right &&
+					ra.right > rt.left &&
+					ra.top < rt.bottom &&
+					ra.bottom > rt.top
+				);
+			}
+
+			// 4. 遊戲主迴圈
+			function gameLoop() {
+				updateBox("box1", { left: "a", right: "d" }, p1);
+				updateBox("box2", { left: "j", right: "l" }, p2);
+
+				// 檢查傷害
+				if (hitCheck("attack1", "box2")) console.log("Player 1 hits!");
+				if (hitCheck("attack2", "box1")) console.log("Player 2 hits!");
+
+				requestAnimationFrame(gameLoop);
+			}
+
+			// 5. 執行初始化
+			setupAttack("box1", "attack1", "s", "right", p1);
+			setupAttack("box2", "attack2", "k", "left", p2);
+			preventCollision("box1", "box2", p1, p2);
+			gameLoop();
+		</script>
+	</body>
+</html>

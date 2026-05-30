@@ -1,0 +1,342 @@
+---
+// Astro 伺服器端邏輯（Frontmatter）
+// 這裡目前不需要處理額外的資料，保持乾淨即可
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Astro Basics</title>
+	</head>
+	<body>
+		<div class="score-board">
+    		<span id="score1">0</span> : <span id="score2">0</span>
+		</div>
+		<div class="game-board">
+			<div id="box1" class="rectangle"></div>
+			<div id="ball"></div>
+			<div id="box2" class="rectangle"></div>
+		</div>
+	</body>
+</html>
+
+<script>
+    // 封裝成可以重複利用的控制函式
+    function setupPaddleControl(boxId, upKey, downKey, initialTop) {
+        const box = document.getElementById(boxId);
+        const board = document.querySelector(".game-board");
+
+        if (!box || !board) return;
+
+        let currentTop = initialTop;
+        const speed = 8;
+
+        // 該玩家專屬的按鍵狀態記錄
+        const keysPressed = {
+            [upKey]: false,
+            [downKey]: false
+        };
+
+        window.addEventListener("keydown", (event) => {
+            const presskey = event.key.toLowerCase();
+            if (presskey in keysPressed) {
+                // 防止按上下鍵時，瀏覽器網頁跟著捲動
+                if (presskey.startsWith("arrow")) {
+                    event.preventDefault();
+                }
+                keysPressed[presskey] = true;
+            }
+        });
+
+        window.addEventListener("keyup", (event) => {
+            const presskey = event.key.toLowerCase();
+            if (presskey in keysPressed) {
+                keysPressed[presskey] = false;
+            }
+        });
+
+        function updatePosition() {
+            if (keysPressed[upKey]) {
+                currentTop -= speed;
+            }
+            if (keysPressed[downKey]) {
+                currentTop += speed;
+            }
+
+            // 邊界限制碰撞偵測
+            const maxTop = board.clientHeight - box.clientHeight;
+            if (currentTop < 0) currentTop = 0;
+            if (currentTop > maxTop) currentTop = maxTop;
+
+            // 更新實際位置
+            box.style.top = currentTop + "px";
+
+            requestAnimationFrame(updatePosition);
+        }
+
+        requestAnimationFrame(updatePosition);
+    }
+    function initBallControl() {
+        const ball = document.getElementById("ball");
+        const board = document.querySelector(".game-board");
+		const box1 = document.getElementById("box1");
+		const box2 = document.getElementById("box2");
+		const score1 = document.getElementById("score1");
+		const score2 = document.getElementById("score2");
+        if (!ball || !board) return;
+
+        // 1. 設定球的初始坐標 (X軸與Y軸)
+        let ballX = 600; 
+        let ballY = 350;
+
+        // 2. 設定球的移動速度 (像素/幀)
+        let speedX = 5; // 正數往右，負數往左
+        let speedY = 4; // 正數往下，負數往上
+
+        // 3. 自動飛行迴圈
+        function moveBall() {
+            // 讓坐標不斷累加速度
+            ballX += speedX;
+            ballY += speedY;
+
+            // 🛑 上下牆壁碰撞偵測
+            const maxBallY = board.clientHeight - ball.clientHeight;
+            if (ballY <= 0 || ballY >= maxBallY) {
+                speedY = -speedY; // Y軸速度正負反轉（達成上下反彈）
+            }
+
+            // 🛑 左右牆壁碰撞偵測 (目前先做單純反彈，之後可改為得分邏輯)
+            const maxBallX = board.clientWidth - ball.clientWidth;
+            if (ballX <= 0 || ballX >= maxBallX) {
+				ballX = 600;      // 瞬間移回中央（視覺上等於在邊界消失）
+    			ballY = 350;
+				// 🔥 隨機方向 (正負號)：決定往左/右、往上/下
+    			const dirX = Math.random() > 0.5 ? 1 : -1;
+    			const dirY = Math.random() > 0.5 ? 1 : -1;
+
+    			// 🔥 隨機速率：X 軸速度在 4 ~ 8 之間，Y 軸速度在 3 ~ 6 之間
+    			speedX = (2 + Math.random() * 1) * dirX;
+    			speedY = (2 + Math.random() * 1) * dirY;
+				// 🔥 更新分數
+				if (ballX <= 0) {
+					score2.textContent = parseInt(score2.textContent) + 1;
+				} else {
+					score1.textContent = parseInt(score1.textContent) + 1;
+				}
+            }
+
+            // 4. 將計算好的新位置更新到 CSS
+            ball.style.left = ballX + "px";
+            ball.style.top = ballY + "px";
+			let b1 = box1.getBoundingClientRect();
+            let b2 = box2.getBoundingClientRect();
+            let ballRect = ball.getBoundingClientRect();
+
+			if (
+                ballRect.left <= b1.right &&    // 球的左邊界 超過 板子的右邊界
+                ballRect.right >= b1.left &&    // 球的右邊界 超過 板子的左邊界
+                ballRect.top <= b1.bottom &&    // 球的頂部 超過 板子的底部
+                ballRect.bottom >= b1.top       // 球的底部 超過 板子的頂部
+            ) {
+                // 為了防止球卡在板子裡，強制把球推到板子右側外一點點
+                ballX = box1.offsetLeft + box1.clientWidth;
+                speedX = -speedX; // X 軸速度反轉，彈開！
+            }
+
+            // 🔥 4. 碰撞偵測：檢查球有沒有撞到 box2 (右板子)
+            if (
+                ballRect.left <= b2.right &&
+                ballRect.right >= b2.left &&
+                ballRect.top <= b2.bottom &&
+                ballRect.bottom >= b2.top
+            ) {
+                // 強制把球推到右板子的左側外
+                ballX = box2.offsetLeft - ball.clientWidth;
+                speedX = -speedX; // X 軸速度反轉，彈開！
+            }
+            // 持續循環
+            requestAnimationFrame(moveBall);
+        }
+
+        // 啟動飛行
+        requestAnimationFrame(moveBall);
+    }
+
+    // 呼叫執行
+    initBallControl();
+    // 🔥 初始化：分別設定 P1（左）與 P2（右）的控制按鍵與初始高度
+    setupPaddleControl("box1", "w", "s", 100);
+    setupPaddleControl("box2", "arrowup", "arrowdown", 100);
+</script>
+
+<style>
+	html,
+	body {
+		margin: 0;
+		min-height: 100%;
+		min-width: 100%;
+		padding: 0;
+	}
+
+	body {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100vw;
+		min-height: 100vh;
+	}
+
+	* {
+		box-sizing: border-box;
+	}
+
+	.text-node {
+		background-clip: text !important;
+		-webkit-background-clip: text !important;
+	}
+
+	/* Board */
+	.board-121d6ebc3253 {
+		position: relative;
+		width: 1031px;
+		height: 615px;
+		background: #c8b4b4ff;
+		overflow: hidden;
+		z-index: 0;
+		margin-top: 50px; /* 稍微往下推，避免被頂部 topbar 遮住 */
+	}
+
+	/* 靜態長方形們 (簡化了 border-radius 語法，更乾淨) */
+	.rectangle-121e21e84c59 {
+		position: absolute;
+		left: 859px;
+		top: 64.67px;
+		width: 93px;
+		height: 40px;
+		background: #b1b2b5ff;
+		border: 1px solid #000000ff;
+		border-radius: 25px;
+		box-shadow: 4px 4px 4px 0px #00000033;
+		filter: blur(2px);
+	}
+
+	.rectangle-121e183989c7 {
+		position: absolute;
+		left: 548px;
+		top: 65.33px;
+		width: 194px;
+		height: 40px;
+		background: #b1b2b5ff;
+		border: 1px solid #000000ff;
+		border-radius: 25px;
+		box-shadow: 4px 4px 4px 0px #00000033;
+		filter: blur(2px);
+	}
+
+	.rectangle-121e132c58c1 {
+		position: absolute;
+		left: 309px;
+		top: 65px;
+		width: 194px;
+		height: 40px;
+		background: #b1b2b5ff;
+		border: 1px solid #000000ff;
+		border-radius: 25px;
+		box-shadow: 4px 4px 4px 0px #00000033;
+		filter: blur(2px);
+	}
+
+	.rectangle-121e0a08d613 {
+		position: absolute;
+		left: 70px;
+		top: 65px;
+		width: 194px;
+		height: 40px;
+		background: #b1b2b5ff;
+		border: 1px solid #000000ff;
+		border-radius: 25px;
+		box-shadow: 4px 4px 4px 0px #00000033;
+		filter: blur(2px);
+	}
+
+	.rectangle-121d72b0758c {
+		position: absolute;
+		left: 37px;
+		top: 44px;
+		width: 965px;
+		height: 80px;
+		background: #b1b2b5ff;
+		border: 1px solid #000000ff;
+		border-radius: 25px;
+		box-shadow: 4px 4px 4px 0px #00000033;
+		filter: blur(2px);
+	}
+
+	/* 藍色移動長方形 */
+	.rectangle {
+		height: 150px;
+		width: 60px;
+		background-color: #3498db;
+		border-radius: 8px;
+		position: absolute;
+		top: 100px;
+		left: 100px;
+		transition: top 0.2s ease-out;
+	}
+	/* 綠色外框邊界 */
+	.game-board {
+		position: relative;
+		width: 1200px; /* 寬度可依需求自行調整 */
+		height: 700px; /* 高度可依需求自行調整 */
+		border: 3px solid #2ecc71; /* 綠色邊框 */
+		background-color: #f9f9f9; /* 稍微帶點灰底，看得比較清楚 */
+		margin-top: 50px;// 避免被頂部 topbar 遮住
+		overflow: hidden; /* 確保東西出界時會被遮住（保險用） */
+	}
+
+	/* 藍色移動長方形 */
+	.rectangle {
+		height: 160px; /* 調整一下高度，比較適合 700px 的視窗 */
+		width: 30px;
+		background-color: #3498db;
+		border-radius: 6px;
+		position: absolute;
+	}
+	#box1{
+		left: 50px;
+		top: 100px;
+	}
+	#box2{
+		left: 1120px;
+		top: 100px;
+	}
+	#ball {
+		width: 20px;
+		height: 20px;
+		background-color: #e74c3c;
+		border-radius: 50%;
+		position: absolute;
+		top: 340px;
+		left: 590px;
+	}
+	.score-board {
+    position: relative;
+    width: 100%;
+    text-align: center;
+    top: 30px;
+    left: 0;
+    color: #000000;
+    font-size: 48px;
+    font-weight: bold;
+    font-family: 'Arial', sans-serif;
+    letter-spacing: 10px;
+    z-index: 10;
+    /* 讓數字帶有一點科技感的陰影 */
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+</style>
