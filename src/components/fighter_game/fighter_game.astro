@@ -51,6 +51,17 @@
 
 				background: rgba(255, 0, 0, 0.2);
 			}
+			.hitbox_kick {
+				position: absolute;
+
+				width: 120px;
+				height: 420px;
+
+				left: 135px;
+				top: 240px;
+
+				background: rgba(255, 0, 0, 0.2);
+			}
 
 			/* ------------------------------------------ */
 			/* 玩家 1 (藍方) 預設去背站姿 */
@@ -80,6 +91,20 @@
 				transform: scaleX(-1);
 			}
 
+			@keyframes kick-anim {
+				0% {
+					background-image: url("src/kick/1.png"); /* 0.0s */
+				}
+				20% {
+					background-image: url("src/kick/2.png"); /* 0.08s 蓄力 */
+				}
+				50% {
+					background-image: url("src/kick/5.png"); /* 0.08s 蓄力 */
+				}
+				100% {
+					background-image: url("src/kick/5.png"); /* 0.08s 蓄力 */
+				}
+			}
 			/* ========================================== */
 			/* 🎬 CSS Keyframes 連續動畫百分比調配 (總長度 0.8s) */
 			/* ========================================== */
@@ -93,7 +118,7 @@
 				15% {
 					background-image: url("src/attack/3.png"); /* 0.12s 出拳中 */
 				}
-				80% {
+				95% {
 					background-image: url("src/attack/4.png"); /* 0.16s 拳頭完全伸直！！！ */
 				}
 				100% {
@@ -104,18 +129,22 @@
 			/* ========================================== */
 			/* 攻擊判定盒 (可隨時換成去背的斬擊光芒特效) */
 			/* ========================================== */
+			/* 攻擊判定盒設定 */
 			.attack {
-				position: absolute;
-				width: 120px;
+				position: absolute; /* 變成相對於 .box 定位 */
+				width: 150px; /* 可依圖片寬度調整 */
 				height: 80px;
-				background: rgba(
-					241,
-					196,
-					15,
-					0.3
-				); /* 預設黃色半透明，方便你除錯高度 */
-				border-radius: 8px;
-				display: none;
+				background: rgba(241, 196, 15, 0.4);
+				display: none; /* 預設隱藏 */
+				top: 400px; /* 調整此數值來對齊你的拳頭高度 */
+			}
+			.attack2 {
+				position: absolute; /* 變成相對於 .box 定位 */
+				width: 200px; /* 可依圖片寬度調整 */
+				height: 110px;
+				background: rgba(241, 196, 15, 0.4);
+				display: none; /* 預設隱藏 */
+				top: 400px; /* 調整此數值來對齊你的拳頭高度 */
 			}
 
 			.instructions {
@@ -173,6 +202,18 @@
 			.box.is-attacking {
 				animation: attack-anim 0.8s steps(1) forwards;
 			}
+			.box.is-kicking {
+				animation: kick-anim 0.2s steps(1) forwards;
+			}
+			#box1 .attack {
+				left: 250px;
+			}
+
+			/* 玩家 2 的攻擊框靠左 (因為翻轉了，所以位置要相反) */
+			#box2 .attack {
+				right: 250px;
+				transform: scaleX(-1);
+			}
 		</style>
 	</head>
 
@@ -183,13 +224,17 @@
 			</div>
 			<div id="box1" class="box">
 				<div class="hitbox"></div>
+				<!-- <div class="hitbox_kick"></div> -->
 			</div>
 			<div id="box2" class="box">
 				<div class="hitbox"></div>
+				<!-- <div class="hitbox_kick"></div> -->
 			</div>
 
 			<div id="attack1" class="attack"></div>
 			<div id="attack2" class="attack"></div>
+			<div id="attack_kick1" class="attack2"></div>
+			<div id="attack_kick2" class="attack2"></div>
 		</div>
 
 		<script>
@@ -230,6 +275,63 @@
 				}
 			}
 
+			// 3. 攻擊與碰撞系統 (邏輯保持你的優化版)
+			function setupAttack_kick(boxId, atkId, key, direction, pos) {
+				const box = document.getElementById(boxId);
+				const atk = document.getElementById(atkId);
+				let attacking = false;
+
+				window.addEventListener("keydown", (e) => {
+					if (e.key.toLowerCase() === key && !attacking) {
+						attacking = true;
+
+						// 1. 記錄原始位置
+						const originalX = pos.x;
+						const dashDistance = 120; // 想要瞬移的距離
+
+						// 2. 瞬間移動：攻擊開始時直接增加座標
+						pos.x +=
+							direction === "right"
+								? dashDistance
+								: -dashDistance;
+						box.style.left = pos.x + "px";
+
+						box.classList.add("is-kicking");
+
+						// 3. 動畫結束後瞬間傳送回來
+						setTimeout(() => {
+							// 瞬間傳送回原位
+							pos.x = originalX;
+							box.style.left = pos.x + "px";
+
+							atk.style.display = "none";
+							box.classList.remove("is-attacking");
+							box.classList.remove("is-walking");
+							box.classList.remove("is-kicking");
+
+							box.style.animation = "none";
+							box.offsetHeight;
+							box.style.animation = "";
+							attacking = false;
+						}, 500); // 與 CSS 動畫長度對應
+
+						// 攻擊判定盒出現
+						setTimeout(() => {
+							if (attacking) atk.style.display = "block";
+						}, 20);
+					}
+				});
+
+				// 追蹤器維持不變
+				function follow() {
+					atk.style.left =
+						(direction === "right" ? pos.x + 200 : pos.x ) +
+						"px";
+					atk.style.top = pos.y + 210 + "px";
+					requestAnimationFrame(follow);
+				}
+				follow();
+			}
 			// 3. 攻擊與碰撞系統 (邏輯保持你的優化版)
 			function setupAttack(boxId, atkId, key, direction, pos) {
 				const box = document.getElementById(boxId);
@@ -272,16 +374,16 @@
 						// 攻擊判定盒出現
 						setTimeout(() => {
 							if (attacking) atk.style.display = "block";
-						}, 160);
+						}, 20);
 					}
 				});
 
 				// 追蹤器維持不變
 				function follow() {
 					atk.style.left =
-						(direction === "right" ? pos.x + 80 : pos.x - 80) +
+						(direction === "right" ? pos.x + 210 : pos.x + 20) +
 						"px";
-					atk.style.top = pos.y + 40 + "px";
+					atk.style.top = pos.y + 200 + "px";
 					requestAnimationFrame(follow);
 				}
 				follow();
@@ -347,7 +449,9 @@
 
 			// 5. 執行初始化
 			setupAttack("box1", "attack1", "s", "right", p1);
+			setupAttack_kick("box1", "attack_kick1", "w", "right", p1);
 			setupAttack("box2", "attack2", "k", "left", p2);
+			setupAttack_kick("box2", "attack_kick2", "i", "left", p2);
 			preventCollision("box1", "box2", p1, p2);
 			gameLoop();
 		</script>
