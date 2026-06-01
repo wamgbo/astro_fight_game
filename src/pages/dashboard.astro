@@ -1,70 +1,63 @@
 ---
 export const prerender = false;
 import Layout from "../layouts/Layout.astro";
-import db from "../db/db.ts"; // 確保你有引入你的 db
-import { actions } from "astro:actions";
+import db from "../db/db.ts"; 
 
 const session = Astro.cookies.get("user_session");
 if (!session) return Astro.redirect("/login");
 
-// 1. 取得所有房間清單
-const rooms = db.prepare("SELECT * FROM rooms").all();
+// 修正：正確的 await 語法與非同步查詢
+const result = await db.execute("SELECT * FROM rooms");
+const rooms = result.rows; 
 ---
 
 <Layout>
-	<h1>歡迎, {session.value}</h1>
+    <h1>歡迎, {session.value}</h1>
+    <hr />
 
-	<hr />
+    <h2>加入房間</h2>
+    <ul>
+        {rooms.map((room: any) => (
+            <li>
+                {room.name}
+                <button class="join-btn" data-id={room.room_id}>加入</button>
+            </li>
+        ))}
+    </ul>
 
-	<h2>加入房間</h2>
-	<ul>
-		{
-			rooms.map((room: any) => (
-				<li>
-					{room.name}
-					<button onclick={`joinRoom('${room.room_id}')`}>
-						加入
-					</button>
-				</li>
-			))
-		}
-	</ul>
+    <hr />
 
-	<hr />
+    <form id="logoutForm">
+        <button type="submit">登出</button>
+    </form>
 
-	<form id="logoutForm">
-		<button type="submit">登出</button>
-	</form>
+    <script>
+        import { actions } from "astro:actions";
 
-	<script >
-		import { actions } from "astro:actions";
+        // 處理加入按鈕
+        document.querySelectorAll(".join-btn").forEach((button) => {
+            button.addEventListener("click", async (e) => {
+                const target = e.currentTarget as HTMLButtonElement;
+                const roomId = target.getAttribute("data-id");
 
-		// 監聽所有加入按鈕
-		document.querySelectorAll(".join-btn").forEach((button) => {
-			button.addEventListener("click", async (e) => {
-				const target = e.target as HTMLButtonElement;
-				const roomId = target.getAttribute("data-id");
+                if (!roomId) return;
 
-				// 執行 Action
-				const result = await actions.joinRoom({ roomId: roomId! });
+                const result = await actions.joinRoom({ roomId });
 
-				if (result.error) {
-					alert("加入失敗: " + result.error.message);
-				} else {
-					window.location.href = `/room/${roomId}`;
-				}
-			});
-		});
-	</script>
+                if (result.error) {
+                    alert("加入失敗: " + result.error.message);
+                } else {
+                    window.location.href = `/room/${roomId}`;
+                }
+            });
+        });
 
-	<script>
-		// 登出邏輯
-		import { actions } from "astro:actions";
-		const logoutForm = document.getElementById("logoutForm");
-		logoutForm?.addEventListener("submit", async (e) => {
-			e.preventDefault();
-			await actions.logout();
-			window.location.href = "/login";
-		});
-	</script>
+        // 處理登出按鈕
+        const logoutForm = document.getElementById("logoutForm");
+        logoutForm?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            await actions.logout();
+            window.location.href = "/login";
+        });
+    </script>
 </Layout>

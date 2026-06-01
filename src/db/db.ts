@@ -1,37 +1,10 @@
-// src/db.ts
-import Database from 'better-sqlite3';
+// src/db/db.ts
+import { createClient } from "@libsql/client";
+import "dotenv/config"; // 這行非常重要，它會載入 .env 檔案
 
-// 這會直接在根目錄產生一個 sqlite.db 檔案
-const db = new Database('sqlite.db');
+const client = createClient({
+  url: process.env.TURSO_DATABASE_URL || "", // 如果沒讀到，給個空字串避免直接報錯
+  authToken: process.env.TURSO_AUTH_TOKEN || "",
+});
 
-// 初始化資料表 (如果不存在的話)
-db.exec(`
-  CREATE TABLE IF NOT EXISTS logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    action TEXT,
-    username TEXT,
-    timestamp TEXT
-  )
-`);
-
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS rooms (
-    room_id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    max_players INTEGER DEFAULT 4
-  );
-  CREATE TABLE IF NOT EXISTS players (
-    player_id TEXT PRIMARY KEY,
-    username TEXT,
-    room_id TEXT,
-    FOREIGN KEY(room_id) REFERENCES rooms(room_id)
-  );
-  CREATE TABLE IF NOT EXISTS logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    action TEXT,
-    username TEXT,
-    timestamp TEXT
-  );
-`);
-export default db;
+export default client;

@@ -1,22 +1,29 @@
 ---
-export const prerender = false; // 這是關鍵，確保是伺服器渲染
+export const prerender = false;
 import Layout from "../../layouts/Layout.astro";
-import db from "../../db/db.ts";
+import db from "../../db/db.ts"; 
 
 const { id } = Astro.params;
 
-// 1. 查詢房間資訊
-const room = db.prepare('SELECT * FROM rooms WHERE room_id = ?').get(id);
+// 1. 查詢房間資訊 (使用 await db.execute)
+const roomResult = await db.execute({
+    sql: 'SELECT * FROM rooms WHERE room_id = ?',
+    args: [id]
+});
+const room = roomResult.rows[0];
 
-// 2. 【關鍵】查詢該房間內的所有玩家
-// 確保 SQL 的 WHERE room_id = ? 是正確傳入該房間的 ID
-const players = db.prepare('SELECT * FROM players WHERE room_id = ?').all(id);
+// 2. 查詢該房間內的所有玩家
+const playersResult = await db.execute({
+    sql: 'SELECT * FROM players WHERE room_id = ?',
+    args: [id]
+});
+const players = playersResult.rows;
 
+// 如果查不到房間，導向首頁
 if (!room) return Astro.redirect('/');
 ---
 
 <Layout>
-  <body>
     <h1>房間名稱: {room.name}</h1>
     <p>房間 ID: {id}</p>
 
@@ -26,5 +33,4 @@ if (!room) return Astro.redirect('/');
         <li>{p.username}</li>
       ))}
     </ul>
-  </body>
 </Layout>
