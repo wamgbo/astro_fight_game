@@ -1,36 +1,50 @@
 ---
-export const prerender = false;
 import Layout from "../../layouts/Layout.astro";
-import db from "../../db/db.ts"; 
-
 const { id } = Astro.params;
-
-// 1. 查詢房間資訊 (使用 await db.execute)
-const roomResult = await db.execute({
-    sql: 'SELECT * FROM rooms WHERE room_id = ?',
-    args: [id]
-});
-const room = roomResult.rows[0];
-
-// 2. 查詢該房間內的所有玩家
-const playersResult = await db.execute({
-    sql: 'SELECT * FROM players WHERE room_id = ?',
-    args: [id]
-});
-const players = playersResult.rows;
-
-// 如果查不到房間，導向首頁
-if (!room) return Astro.redirect('/');
 ---
 
 <Layout>
-    <h1>房間名稱: {room.name}</h1>
-    <p>房間 ID: {id}</p>
+  <div id="status" style="color: blue;">等待連線中...</div>
 
-    <h2>目前房間內的玩家 ({players.length} 位):</h2>
-    <ul>
-      {players.map((p: any) => (
-        <li>{p.username}</li>
-      ))}
-    </ul>
+  <div id="game-ui">
+    <input id="msg-input" type="text" placeholder="輸入訊息" />
+    <button id="send-btn">發送</button>
+    <ul id="chat-list"></ul>
+  </div>
+
+  <script define:vars={{ roomId: id }}>
+    import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+
+    const socket = io("http://localhost:3001");
+    const status = document.getElementById("status");
+    const sendBtn = document.getElementById("send-btn");
+    const input = document.getElementById("msg-input");
+    const chatList = document.getElementById("chat-list");
+
+    // 當連線成功時，自動發送加入房間指令
+    socket.on("connect", () => {
+      status.innerText = "已連線至房間: " + roomId;
+      socket.emit("join-room", roomId);
+    });
+
+    // 處理斷線
+    socket.on("disconnect", () => {
+      status.innerText = "連線中斷，正在嘗試重新連線...";
+    });
+
+    // 監聽接收
+    socket.on("receive-message", (msg) => {
+      const li = document.createElement("li");
+      li.textContent = msg;
+      chatList.appendChild(li);
+    });
+
+    sendBtn.addEventListener("click", () => {
+      const msg = input.value;
+      if (msg) {
+        socket.emit("send-message", { roomId, msg });
+        input.value = "";
+      }
+    });
+  </script>
 </Layout>

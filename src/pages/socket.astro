@@ -1,0 +1,105 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<style>
+	body {
+		-webkit-user-select: none; /* Safari */
+		-moz-user-select: none; /* Firefox */
+		-ms-user-select: none; /* IE/Edge */
+		user-select: none; /* 標準寫法 */
+
+		/* 順便補上防止右鍵選單，這樣就更像原生遊戲了 */
+		-webkit-touch-callout: none;
+	}
+</style>
+<Layout>
+	<Layout>
+		<div
+			id="game-container"
+			style="position:relative; width:800px; height:600px; border:3px solid #333; background:#f0f0f0;"
+		>
+		</div>
+		<div id="status">操作說明：W=拳, S=腿, J=防禦, 方向鍵=移動</div>
+
+		<script type="module">
+			import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+			const socket = io("http://localhost:3001");
+			const container = document.getElementById("game-container");
+
+			let myPos = { x: 100, y: 100 };
+
+			// 監聽鍵盤操作
+			// 監聽鍵盤操作
+			window.addEventListener("keydown", (e) => {
+				// 1. 移動 (使用方向鍵)
+				console.log("按下按鍵:", e.key); // <--- 加入這行
+				if (e.key === "ArrowUp") myPos.y -= 20;
+				else if (e.key === "ArrowDown") myPos.y += 20;
+				else if (e.key === "ArrowLeft") myPos.x -= 20;
+				else if (e.key === "ArrowRight") myPos.x += 20;
+
+				// 2. 動作 (使用 W, S, J, K, L)
+				// 為了避免與移動鍵衝突，確保這裡的判斷邏輯是獨立的
+				if (e.key === "w")
+					socket.emit("attack", "punch"); // W=拳
+				else if (e.key === "s")
+					socket.emit("attack", "kick"); // S=腿
+				else if (e.key === "l") socket.emit("defend", true); // L=防禦
+
+				// 發送移動位置
+				if (
+					[
+						"ArrowUp",
+						"ArrowDown",
+						"ArrowLeft",
+						"ArrowRight",
+					].includes(e.key)
+				) {
+					socket.emit("move", myPos);
+				}
+			});
+
+			window.addEventListener("keyup", (e) => {
+				if (e.key === "l") socket.emit("defend", false);
+			});
+
+			// 渲染畫面
+			socket.on("update-players", (players) => {
+				container.innerHTML = ""; // 清空畫布
+
+				Object.keys(players).forEach((id) => {
+					const p = players[id];
+					const div = document.createElement("div");
+
+					// 設定方塊樣式
+					div.style.position = "absolute";
+					div.style.left = p.x + "px";
+					div.style.top = p.y + "px";
+					div.style.width = "50px";
+					div.style.height = "50px";
+					div.style.display = "flex";
+					div.style.alignItems = "center";
+					div.style.justifyContent = "center";
+					div.style.color = "white";
+					div.style.fontWeight = "bold";
+					div.style.transition = "all 0.1s";
+
+					// 狀態顏色：防禦(綠) > 攻擊(黃) > 自己(藍) / 對手(紅)
+					div.style.backgroundColor = p.isDefending
+						? "green"
+						: p.isAttacking
+							? "yellow"
+							: id === socket.id
+								? "blue"
+								: "red";
+
+					// 顯示血量(星星)
+					div.innerText = "★".repeat(p.hp);
+
+					container.appendChild(div);
+				});
+			});
+		</script>
+	</Layout>
+</Layout>

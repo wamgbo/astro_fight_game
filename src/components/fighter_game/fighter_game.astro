@@ -5,7 +5,7 @@
 		<meta name="viewport" content="width=device-width" />
 		<title>Box Fight System - Synchronized Animation Fix</title>
 
-		<style>
+		<style is:global>
 			html,
 			body {
 				margin: 0;
@@ -49,7 +49,7 @@
 				left: 135px;
 				top: 340px;
 
-				/* background: rgba(255, 0, 0, 0.2); */
+				background: rgba(255, 0, 0, 0.2);
 			}
 			/* ========================================== */
 			/* 攻擊判定盒 (可隨時換成去背的斬擊光芒特效) */
@@ -59,7 +59,7 @@
 				position: absolute; /* 變成相對於 .box 定位 */
 				width: 150px; /* 可依圖片寬度調整 */
 				height: 80px;
-				/* background: rgba(241, 196, 15, 0.4); */
+				background: rgba(241, 196, 15, 0.4);
 				display: none; /* 預設隱藏 */
 				top: 400px; /* 調整此數值來對齊你的拳頭高度 */
 			}
@@ -67,7 +67,7 @@
 				position: absolute; /* 變成相對於 .box 定位 */
 				width: 200px; /* 可依圖片寬度調整 */
 				height: 110px;
-				/* background: rgba(241, 196, 15, 0.4); */
+				background: rgba(241, 196, 15, 0.4);
 				display: none; /* 預設隱藏 */
 				top: 400px; /* 調整此數值來對齊你的拳頭高度 */
 			}
@@ -80,7 +80,6 @@
 				text-align: center;
 				width: 100%;
 			}
-
 
 			/* ------------------------------------------ */
 			/* 玩家 1 (藍方) 預設去背站姿 */
@@ -110,6 +109,75 @@
 				transform: scaleX(-1);
 			}
 
+			/* 走路狀態 (當按下移動鍵時套用) */
+
+			/* 預設狀態：套用 Idle 循環動畫 */
+			.box {
+				animation: idle-anim 1s steps(1) infinite;
+			}
+
+			.box.is-walking {
+				animation: walk-anim 0.5s steps(1) infinite;
+			}
+			/* 攻擊時：暫停 Idle 動畫，改為攻擊動畫 */
+			.box.is-attacking {
+				animation: attack-anim 0.8s steps(1) forwards;
+			}
+			.box.is-kicking {
+				animation: kick-anim 0.2s steps(1) forwards;
+			}
+			#box1 .attack {
+				left: 250px;
+			}
+
+			/* 玩家 2 的攻擊框靠左 (因為翻轉了，所以位置要相反) */
+			#box2 .attack {
+				right: 250px;
+				transform: scaleX(-1);
+			}
+			/* 被擊中時的圖片樣式 (請替換為你的受傷圖片路徑) */
+			.box.is-hit {
+				background-image: url("src/hit/1.png") !important;
+			}
+
+			.box.is-hit {
+				animation: blink 0.2s linear infinite !important;
+			}
+
+			/* 這是你的容器樣式 */
+			.heart-bar {
+				position: absolute;
+				top: 20px;
+				height: 70px; /* 務必設定高度！ */
+				width: 320px; /* 務必設定高度！ */
+				display: flex; /* 讓心心自動排列 */
+				align-items: center;
+				gap: 5px;
+				z-index: 1000;
+				border: 2px solid yellow;
+				background-color: rgba(
+					0,
+					0,
+					0,
+					0.3
+				); /* 加一點半透明背景，方便看清範圍 */
+			}
+
+			#heart1-bar {
+				left: 20px;
+			}
+			#heart2-bar {
+				right: 20px;
+				flex-direction: row-reverse;
+			}
+
+			/* 這是心臟圖示樣式 */
+			.heart-icon {
+				width: 100px;
+				height: 100px;
+				background: url("src/heart/full.png") center/contain no-repeat;
+				/* 這裡不需要 position: absolute，因為交給 flex 處理 */
+			}
 			@keyframes kick-anim {
 				0% {
 					background-image: url("src/kick/1.png"); /* 0.0s */
@@ -145,7 +213,6 @@
 				}
 			}
 
-
 			/* Idle 循環動畫定義 */
 			@keyframes idle-anim {
 				0% {
@@ -178,38 +245,6 @@
 					background-image: url("src/walk/2.png");
 				}
 			}
-
-			/* 走路狀態 (當按下移動鍵時套用) */
-
-			/* 預設狀態：套用 Idle 循環動畫 */
-			.box {
-				animation: idle-anim 1s steps(1) infinite;
-			}
-
-			.box.is-walking {
-				animation: walk-anim 0.5s steps(1) infinite;
-			}
-			/* 攻擊時：暫停 Idle 動畫，改為攻擊動畫 */
-			.box.is-attacking {
-				animation: attack-anim 0.8s steps(1) forwards;
-			}
-			.box.is-kicking {
-				animation: kick-anim 0.2s steps(1) forwards;
-			}
-			#box1 .attack {
-				left: 250px;
-			}
-
-			/* 玩家 2 的攻擊框靠左 (因為翻轉了，所以位置要相反) */
-			#box2 .attack {
-				right: 250px;
-				transform: scaleX(-1);
-			}
-			/* 被擊中時的圖片樣式 (請替換為你的受傷圖片路徑) */
-			.box.is-hit {
-				background-image: url("src/hit/1.png") !important;
-			}
-
 			/* 如果你希望受傷時有閃爍效果 */
 			@keyframes blink {
 				0% {
@@ -222,9 +257,6 @@
 					opacity: 1;
 				}
 			}
-			.box.is-hit {
-				animation: blink 0.2s linear infinite !important;
-			}
 		</style>
 	</head>
 
@@ -233,6 +265,9 @@
 			<div class="instructions">
 				玩家 1: A/D 移動, S 攻擊 | 玩家 2: J/L 移動, K 攻擊
 			</div>
+			<div id="heart1-bar" class="heart-bar"></div>
+			<div id="heart2-bar" class="heart-bar"></div>
+
 			<div id="box1" class="box">
 				<div id="hitbox1" class="hitbox"></div>
 			</div>
@@ -245,327 +280,412 @@
 			<div id="attack_kick1" class="attack2"></div>
 			<div id="attack_kick2" class="attack2"></div>
 		</div>
+	</body>
 
-		<script>
-			// 1. 初始化狀態與位置物件
-			const keys = {};
-			const p1 = { x: 10, y: 200, isLocked: false, isHit: false };
-			const p2 = { x: 800, y: 200, isLocked: false, isHit: false };
+	<script>
+		// 1. 初始化狀態與位置物件
+		const keys = {};
+		const p1 = {
+			x: 10,
+			y: 200,
+			isLocked: false,
+			isHit: false,
+			heart: 3,
+			heartBar: "heart1-bar",
+			isInvincible: false,
+		};
+		const p2 = {
+			x: 800,
+			y: 200,
+			isLocked: false,
+			isHit: false,
+			heart: 3,
+			heartBar: "heart2-bar",
+			isInvincible: false,
+		};
 
-			window.addEventListener(
-				"keydown",
-				(e) => (keys[e.key.toLowerCase()] = true),
-			);
-			window.addEventListener(
-				"keyup",
-				(e) => (keys[e.key.toLowerCase()] = false),
-			);
-			function playSound(file) {
-				const audio = new Audio(file);
-				audio
-					.play()
-					.catch((e) => console.log("等待使用者互動後才能播放音效"));
+		function initHearts(heartBarId, count) {
+			const container = document.getElementById(heartBarId);
+			for (let i = 0; i < count; i++) {
+				const heart = document.createElement("div");
+				heart.className = "heart-icon"; // 確保掛上正確的類別名稱
+				container.appendChild(heart); // 成功把 heart-icon 塞進去
 			}
-			// 2. 移動系統
-			function updateBox(id, map, pos) {
-				const box = document.getElementById(id);
+		}
+		initHearts(p1.heartBar, p1.heart);
+		initHearts(p2.heartBar, p2.heart);
+		function subHearts(pos) {
+			const container = document.getElementById(pos.heartBar);
+			if (pos.heart <= 0) {
+				alert("遊戲結束！");
+				window.location.reload();
+			}
+			if (container.children.length > 0 && !pos.isInvincible) {
+				container.removeChild(container.lastElementChild);
+				pos.heart--;
+				console.log(`剩餘生命: ${pos.heart}`);
+				pos.isInvincible = true;
+			}
+			setTimeout(() => {
+				pos.isInvincible = false;
+			}, 1000);
+		}
+		function conunterHearts(pos) {
+			const container = document.getElementById(pos.heartBar);
+			if (container.children.length < 3 && !pos.isInvincible) {
+				const heart = document.createElement("div");
+				heart.className = "heart-icon";
+				container.appendChild(heart);
+				pos.heart++;
+				console.log(`反擊成功！回復一顆心，當前生命: ${pos.heart}`);
+				pos.isInvincible = true;
+			}
+			setTimeout(() => {
+				pos.isInvincible = false;
+			}, 2000);
+		}
 
-				// 如果被鎖定（攻擊中），直接停止所有移動與動畫邏輯
-				if (pos.isLocked || pos.isHit) {
-					if (box.classList.contains("is-walking")) {
-						box.classList.remove("is-walking");
-					}
-					return;
+		window.addEventListener(
+			"keydown",
+			(e) => (keys[e.key.toLowerCase()] = true),
+		);
+		window.addEventListener(
+			"keyup",
+			(e) => (keys[e.key.toLowerCase()] = false),
+		);
+		function playSound(file) {
+			const audio = new Audio(file);
+			audio
+				.play()
+				.catch((e) => console.log("等待使用者互動後才能播放音效"));
+		}
+		// 2. 移動系統
+		function updateBox(id, map, pos) {
+			const box = document.getElementById(id);
+
+			// 如果被鎖定（攻擊中），直接停止所有移動與動畫邏輯
+			if (pos.isLocked || pos.isHit) {
+				if (box.classList.contains("is-walking")) {
+					box.classList.remove("is-walking");
 				}
-
-				// 以下是正常的移動邏輯
-				const speed = 2;
-				const isMoving = keys[map.left] || keys[map.right];
-
-				if (keys[map.left]) pos.x -= speed;
-				if (keys[map.right]) pos.x += speed;
-
-				pos.x = Math.max(0, Math.min(800, pos.x));
-				box.style.left = pos.x + "px";
-
-				// 處理移動動畫
-				if (isMoving) {
-					if (!box.classList.contains("is-walking"))
-						box.classList.add("is-walking");
-				} else {
-					if (box.classList.contains("is-walking"))
-						box.classList.remove("is-walking");
-				}
+				return;
 			}
-			// 修改 spawnHitEffect 接收 targetId 參數
-			function spawnHitEffect(x, y, targetId, Pos) {
-				// 1. 產生視覺特效 (原本的)
-				Pos.isHit = true; // 🔥 設置受擊狀態
-				const effect = document.createElement("div");
-				effect.className = "hit-effect";
-				effect.style.left = x - 50 + "px";
-				effect.style.top = y - 50 + "px";
-				document.querySelector(".game-board").appendChild(effect);
-				setTimeout(() => effect.remove(), 300);
 
-				// 2. 切換圖片狀態
-				const target = document.getElementById(targetId);
-				target.classList.add("is-hit");
+			// 以下是正常的移動邏輯
+			const speed = 2;
+			const isMoving = keys[map.left] || keys[map.right];
 
-				// 3. 0.3 秒後恢復原狀
-				setTimeout(() => {
-					target.classList.remove("is-hit");
-					Pos.isHit = false; // 🔥 解鎖：受擊時暫停移動與動k畫
-				}, 500);
+			if (keys[map.left]) pos.x -= speed;
+			if (keys[map.right]) pos.x += speed;
+
+			pos.x = Math.max(0, Math.min(800, pos.x));
+			box.style.left = pos.x + "px";
+
+			// 處理移動動畫
+			if (isMoving) {
+				if (!box.classList.contains("is-walking"))
+					box.classList.add("is-walking");
+			} else {
+				if (box.classList.contains("is-walking"))
+					box.classList.remove("is-walking");
 			}
-			function spawnCounterEffect(x, y, targetId, Pos) {
-				// 1. 產生視覺特效 (原本的)
-				Pos.isHit = true; // 🔥 設置受擊狀態
-				const effect = document.createElement("div");
-				effect.className = "hit-effect";
-				effect.style.left = x - 50 + "px";
-				effect.style.top = y - 50 + "px";
-				document.querySelector(".game-board").appendChild(effect);
-				setTimeout(() => effect.remove(), 300);
+		}
+		// 修改 spawnHitEffect 接收 targetId 參數
+		function spawnHitEffect(x, y, targetId, Pos) {
+			// 1. 產生視覺特效 (原本的)
+			Pos.isHit = true; // 🔥 設置受擊狀態
+			const effect = document.createElement("div");
+			effect.className = "hit-effect";
+			effect.style.left = x - 50 + "px";
+			effect.style.top = y - 50 + "px";
+			document.querySelector(".game-board").appendChild(effect);
+			setTimeout(() => effect.remove(), 300);
 
-				// 2. 切換圖片狀態
-				const target = document.getElementById(targetId);
-				target.classList.add("is-hit");
+			// 2. 切換圖片狀態
+			const target = document.getElementById(targetId);
+			target.classList.add("is-hit");
 
-				// 3. 0.3 秒後恢復原狀
-				setTimeout(() => {
-					target.classList.remove("is-hit");
-					Pos.isHit = false; // 🔥 解鎖：受擊時暫停移動與動k畫
-				}, 2000);
-			}
-			// 3. 攻擊與碰撞系統 (邏輯保持你的優化版) KICK
-			function setupAttack_kick(boxId, atkId, key, direction, pos) {
-				const box = document.getElementById(boxId);
-				const atk = document.getElementById(atkId);
-				let attacking = false;
+			// 3. 0.3 秒後恢復原狀
+			setTimeout(() => {
+				target.classList.remove("is-hit");
+				Pos.isHit = false; // 🔥 解鎖：受擊時暫停移動與動k畫
+			}, 500);
+		}
+		function spawnCounterEffect(x, y, targetId, Pos) {
+			// 1. 產生視覺特效 (原本的)
+			Pos.isHit = true; // 🔥 設置受擊狀態
+			const effect = document.createElement("div");
+			effect.className = "hit-effect";
+			effect.style.left = x - 50 + "px";
+			effect.style.top = y - 50 + "px";
+			document.querySelector(".game-board").appendChild(effect);
+			setTimeout(() => effect.remove(), 300);
 
-				window.addEventListener("keydown", (e) => {
-					if (pos.isHit) return;
-					if (e.key.toLowerCase() === key && !attacking) {
-						pos.isLocked = true; // 🔥 強制鎖定：此時 updateBox 將無法移動
-						attacking = true;
-						playSound("src/components/fighter_game/src/kick/1.wav");
-						// 0. 記錄原始位置
-						const originalX = pos.x;
-						const dashDistance = 119; // 想要瞬移的距離
+			// 2. 切換圖片狀態
+			const target = document.getElementById(targetId);
+			target.classList.add("is-hit");
 
-						// 1. 瞬間移動：攻擊開始時直接增加座標
-						pos.x +=
-							direction === "right"
-								? dashDistance
-								: -dashDistance;
-						box.style.left = pos.x + "px";
+			// 3. 0.3 秒後恢復原狀
+			setTimeout(() => {
+				target.classList.remove("is-hit");
+				Pos.isHit = false; // 🔥 解鎖：受擊時暫停移動與動k畫
+			}, 2000);
+		}
+		// 3. 攻擊與碰撞系統 (邏輯保持你的優化版) KICK
+		function setupAttack_kick(htbox, boxId, atkId, key, direction, pos) {
+			const box = document.getElementById(boxId);
+			const hbox = document.getElementById(htbox);
+			const atk = document.getElementById(atkId);
+			let attacking = false;
 
-						box.classList.add("is-kicking");
-
-						// 2. 動畫結束後瞬間傳送回來
-						setTimeout(() => {
-							// 瞬間傳送回原位
-							pos.x = originalX;
-							box.style.left = pos.x + "px";
-
-							atk.style.display = "none";
-							box.classList.remove("is-attacking");
-							box.classList.remove("is-walking");
-							box.classList.remove("is-kicking");
-
-							box.style.animation = "none";
-							box.offsetHeight;
-							box.style.animation = "";
-							attacking = false;
-							pos.isLocked = false; // 🔥 解鎖：攻擊結束後恢復移動能力
-						}, 499); // 與 CSS 動畫長度對應
-
-						// 攻擊判定盒出現
-						setTimeout(() => {
-							if (attacking) atk.style.display = "block";
-						}, 19);
-					}
-				});
-
-				// 追蹤器維持不變
-				function follow() {
-					atk.style.left =
-						(direction === "right" ? pos.x + 199 : pos.x) + "px";
-					atk.style.top = pos.y + 209 + "px";
-					requestAnimationFrame(follow);
-				}
-				follow();
-			}
-			// 2. 攻擊與碰撞系統 (邏輯保持你的優化版)
-			function setupAttack(boxId, atkId, key, direction, pos) {
+			window.addEventListener("keydown", (e) => {
 				if (pos.isHit) return;
+				if (e.key.toLowerCase() === key && !attacking) {
+					pos.isLocked = true; // 🔥 強制鎖定：此時 updateBox 將無法移動
+					attacking = true;
+					playSound("src/components/fighter_game/src/kick/1.wav");
+					// 0. 記錄原始位置
+					const originalX = pos.x;
+					const dashDistance = 119; // 想要瞬移的距離
 
-				const box = document.getElementById(boxId);
-				const atk = document.getElementById(atkId);
-				let attacking = false;
+					// 1. 瞬間移動：攻擊開始時直接增加座標
+					pos.x +=
+						direction === "right" ? dashDistance : -dashDistance;
+					box.style.left = pos.x + "px";
 
-				window.addEventListener("keydown", (e) => {
-					if (pos.isHit) return;
-					if (e.key.toLowerCase() === key && !attacking) {
-						pos.isLocked = true; // 🔥 強制鎖定：此時 updateBox 將無法移動
-						attacking = true;
-						playSound(
-							"src/components/fighter_game/src/attack/1.wav",
-						);
+					box.classList.add("is-kicking");
 
-						// 0. 記錄原始位置
-						const originalX = pos.x;
-						const dashDistance = 79; // 想要瞬移的距離
-
-						// 1. 瞬間移動：攻擊開始時直接增加座標
-						pos.x +=
-							direction === "right"
-								? dashDistance
-								: -dashDistance;
+					// 2. 動畫結束後瞬間傳送回來
+					setTimeout(() => {
+						hbox.style.display = "none"; // 確保攻擊判定盒在攻擊結束後隱藏
+						// 瞬間傳送回原位
+						pos.x = originalX;
 						box.style.left = pos.x + "px";
 
-						box.classList.add("is-attacking");
+						atk.style.display = "none";
+						box.classList.remove("is-attacking");
+						box.classList.remove("is-walking");
+						box.classList.remove("is-kicking");
 
-						// 2. 動畫結束後瞬間傳送回來
-						setTimeout(() => {
-							// 瞬間傳送回原位
-							pos.x = originalX;
-							box.style.left = pos.x + "px";
+						box.style.animation = "none";
+						box.offsetHeight;
+						box.style.animation = "";
+						attacking = false;
+						pos.isLocked = false; // 🔥 解鎖：攻擊結束後恢復移動能力
+						hbox.style.display = "block"; // 確保攻擊判定盒在攻擊結束後隱藏
+					}, 499); // 與 CSS 動畫長度對應
 
-							atk.style.display = "none";
-							box.classList.remove("is-attacking");
-							box.classList.remove("is-walking");
-
-							box.style.animation = "none";
-							box.offsetHeight;
-							box.style.animation = "";
-							attacking = false;
-							pos.isLocked = false; // 🔥 解鎖：攻擊結束後恢復移動能力
-						}, 299); // 與 CSS 動畫長度對應
-
-						// 攻擊判定盒出現
-						setTimeout(() => {
-							if (attacking) atk.style.display = "block";
-						}, 19);
-					}
-				});
-
-				// 追蹤器維持不變
-				function follow() {
-					atk.style.left =
-						(direction === "right" ? pos.x + 209 : pos.x + 20) +
-						"px";
-					atk.style.top = pos.y + 199 + "px";
-					requestAnimationFrame(follow);
-				}
-				follow();
-			}
-
-			function preventCollision(aId, bId, posA, posB) {
-				const a = document.getElementById(aId).querySelector(".hitbox");
-				const b = document.getElementById(bId).querySelector(".hitbox");
-
-				function loop() {
-					const r1 = a.getBoundingClientRect();
-					const r2 = b.getBoundingClientRect();
-
-					if (
-						r1.left < r2.right &&
-						r1.right > r2.left &&
-						r1.top < r2.bottom &&
-						r1.bottom > r2.top
-					) {
-						const dx =
-							r1.left + r1.width / 2 - (r2.left + r2.width / 2);
-						const overlapX =
-							r1.width / 2 + r2.width / 2 - Math.abs(dx);
-						const push = overlapX / 2;
-						if (dx > 0) {
-							posA.x += push;
-							posB.x -= push;
-						} else {
-							posA.x -= push;
-							posB.x += push;
+					// 攻擊判定盒出現
+					setTimeout(() => {
+						if (attacking) {
+							atk.style.display = "block";
 						}
+					}, 19);
+				}
+			});
+
+			// 追蹤器維持不變
+			function follow() {
+				atk.style.left =
+					(direction === "right" ? pos.x + 199 : pos.x) + "px";
+				atk.style.top = pos.y + 209 + "px";
+				requestAnimationFrame(follow);
+			}
+			follow();
+		}
+		// 2. 攻擊與碰撞系統 (邏輯保持你的優化版)
+		function setupAttack(boxId, atkId, key, direction, pos) {
+			if (pos.isHit) return;
+
+			const box = document.getElementById(boxId);
+			const atk = document.getElementById(atkId);
+
+			let startTime = 0;
+
+			window.addEventListener("keydown", (e) => {
+				if (pos.isHit || pos.isLocked) return;
+				if (e.key.toLowerCase() === key && !pos.isLocked) {
+					pos.isLocked = true;
+					startTime = performance.now(); // 🔥 這裡必須更新 startTime
+
+					// ... (原本的音效與瞬間移動邏輯保持不變)
+					pos.isLocked = true;
+					playSound("src/components/fighter_game/src/attack/1.wav");
+
+					const originalX = pos.x;
+					pos.x += direction === "right" ? 79 : -79;
+					box.style.left = pos.x + "px";
+					box.classList.add("is-attacking");
+
+					setTimeout(() => {
+						pos.x = originalX;
+						box.style.left = pos.x + "px";
+						atk.style.display = "none";
+						box.classList.remove("is-attacking");
+						pos.isLocked = false;
+					}, 400);
+				}
+			});
+
+			function follow(now) {
+				if (pos.isLocked) {
+					const elapsed = now - startTime;
+
+					// 1. 控制攻擊盒的顯示與偏移
+					let kickExtension = 0;
+
+					if (elapsed < 100) {
+						atk.style.display = "none"; // 蓄力階段不顯示
+					} else if (elapsed >= 100 && elapsed < 280) {
+						atk.style.display = "block"; // 踢擊階段顯示
+						kickExtension =
+							pos.heartBar === "heart1-bar" ? 30 : -200; // 根據玩家不同增加額外距離
+					} else {
+						atk.style.display = "none"; // 收回階段隱藏
 					}
-					requestAnimationFrame(loop);
-				}
-				loop();
-			}
 
-			function hitCheck(atkId, targetId) {
-				const atk = document.getElementById(atkId);
-				const target = document.getElementById(targetId);
-				if (atk.style.display !== "block") return false;
-				const ra = atk.getBoundingClientRect();
-				const rt = target.getBoundingClientRect();
-				return (
-					ra.left < rt.right &&
-					ra.right > rt.left &&
-					ra.top < rt.bottom &&
-					ra.bottom > rt.top
-				);
-			}
+					// 2. 計算 X 軸位置
+					const baseOffset = direction === "right" ? 209 : 20;
+					const finalX =
+						direction === "right"
+							? pos.x + baseOffset + kickExtension
+							: pos.x - 180 - kickExtension;
 
-			// 4. 遊戲主迴圈
-			function gameLoop() {
-				updateBox("box1", { left: "a", right: "d" }, p1);
-				updateBox("box2", { left: "j", right: "l" }, p2);
-				let player1GetCounter=false;
-				let player2GetCounter=false;
-				let player1Gethit=false;
-				let player2Gethit=false;
-				// 檢查傷害 (建議使用之前的冷卻邏輯避免一次判定觸發多次)
-				if (
-					hitCheck("attack1", "hitbox2") ||
-					hitCheck("attack_kick1", "hitbox2")&& player1Gethit===false
-				) {
-					// 傳入 "box2" 作為受害者 ID
-					spawnHitEffect(p2.x + 200, p2.y + 200, "box2", p2);
+					atk.style.left = finalX + "px";
+					atk.style.top = pos.y + 199 + "px";
+				} else {
+					// 非攻擊狀態強制隱藏
+					atk.style.display = "none";
 				}
+
+				requestAnimationFrame(follow);
+			}
+			requestAnimationFrame(follow);
+		}
+
+		function preventCollision(aId, bId, posA, posB) {
+			const a = document.getElementById(aId).querySelector(".hitbox");
+			const b = document.getElementById(bId).querySelector(".hitbox");
+
+			function loop() {
+				const r1 = a.getBoundingClientRect();
+				const r2 = b.getBoundingClientRect();
 
 				if (
-					hitCheck("attack2", "hitbox1") ||
-					hitCheck("attack_kick2", "hitbox1") && player2Gethit===false
+					r1.left < r2.right &&
+					r1.right > r2.left &&
+					r1.top < r2.bottom &&
+					r1.bottom > r2.top
 				) {
-					// 傳入 "box1" 作为受害者 ID
-					spawnHitEffect(p1.x + 200, p1.y + 200, "box1", p1);
+					const dx =
+						r1.left + r1.width / 2 - (r2.left + r2.width / 2);
+					const overlapX = r1.width / 2 + r2.width / 2 - Math.abs(dx);
+					const push = overlapX / 2;
+					if (dx > 0) {
+						posA.x += push;
+						posB.x -= push;
+					} else {
+						posA.x -= push;
+						posB.x += push;
+					}
 				}
-				// 檢查傷害 (建議使用之前的冷卻邏輯避免一次判定觸發多次)
+				requestAnimationFrame(loop);
+			}
+			loop();
+		}
+
+		function hitCheck(atkId, targetId) {
+			const atk = document.getElementById(atkId);
+			const target = document.getElementById(targetId);
+			if (atk.style.display !== "block") return false;
+			const ra = atk.getBoundingClientRect();
+			const rt = target.getBoundingClientRect();
+			return (
+				ra.left < rt.right &&
+				ra.right > rt.left &&
+				ra.top < rt.bottom &&
+				ra.bottom > rt.top
+			);
+		}
+
+		// 4. 遊戲主迴圈
+		function gameLoop() {
+			updateBox("box1", { left: "a", right: "d" }, p1);
+			updateBox("box2", { left: "j", right: "l" }, p2);
+			let player1GetCounter = false;
+			let player2GetCounter = false;
+			let player1Gethit = false;
+			let player2Gethit = false;
+			// 檢查傷害 (建議使用之前的冷卻邏輯避免一次判定觸發多次)
+			if (p2.isInvincible === false) {
 				if (
 					hitCheck("attack1", "attack2") ||
 					hitCheck("attack1", "attack_kick2") ||
 					hitCheck("attack_kick1", "attack2") ||
-					hitCheck("attack_kick1", "attack_kick2") && player1GetCounter===false
+					(hitCheck("attack_kick1", "attack_kick2") &&
+						p2.isLocked === true)
 				) {
 					// 傳入 "box2" 作為受害者 ID
-					player2GetCounter=true;
+					console.log("玩家1反擊成功！");
+					player2GetCounter = true;
 					spawnCounterEffect(p2.x + 200, p2.y + 200, "box2", p2);
+					conunterHearts(p1);
+					subHearts(p2);
+				} else if (
+					hitCheck("attack1", "hitbox2") ||
+					(hitCheck("attack_kick1", "hitbox2") &&
+						player1Gethit === false)
+				) {
+					console.log("玩家1攻擊命中玩家2！");
+					// 傳入 "box2" 作為受害者 ID
+					subHearts(p2);
+					player1Gethit = true;
+					spawnHitEffect(p2.x + 200, p2.y + 200, "box2", p2);
 				}
+				// 檢查傷害 (建議使用之前的冷卻邏輯避免一次判定觸發多次)
+			}
 
+			if (p1.isInvincible === false) {
 				if (
 					hitCheck("attack2", "attack1") ||
 					hitCheck("attack2", "attack_kick1") ||
-					hitCheck("attack_kick2", "attack1")||
-					hitCheck("attack_kick2", "attack_kick1") && player2GetCounter===false
+					hitCheck("attack_kick2", "attack1") ||
+					(hitCheck("attack_kick2", "attack_kick1") &&
+						p1.isLocked === true)
 				) {
-					player1GetCounter=true;
+					console.log("玩家2反擊成功！");
+					player1GetCounter = true;
 					// 傳入 "box1" 作为受害者 ID
 					spawnCounterEffect(p1.x + 200, p1.y + 200, "box1", p1);
+					conunterHearts(p2);
+					subHearts(p2);
 				}
-
-
-				requestAnimationFrame(gameLoop);
+				if (
+					hitCheck("attack2", "hitbox1") ||
+					(hitCheck("attack_kick2", "hitbox1") &&
+						player2Gethit === false)
+				) {
+					// 傳入 "box1" 作为受害者 ID
+					subHearts(p1);
+					player2Gethit = true;
+					spawnHitEffect(p1.x + 200, p1.y + 200, "box1", p1);
+				}
 			}
+			// if (
+			// 	attack1.style.display === "none" ||
+			// 	attack_kick1.style.display === "none"
+			// ) {
+			// 	player1Gethit = false;
+			// }
+			requestAnimationFrame(gameLoop);
+		}
 
-			// 5. 執行初始化
-			setupAttack("box1", "attack1", "s", "right", p1);
-			setupAttack_kick("box1", "attack_kick1", "w", "right", p1);
-			setupAttack("box2", "attack2", "k", "left", p2);
-			setupAttack_kick("box2", "attack_kick2", "i", "left", p2);
-			preventCollision("box1", "box2", p1, p2);
-			gameLoop();
-		</script>
-	</body>
+		// 5. 執行初始化
+		setupAttack("box1", "attack1", "s", "right", p1);
+		setupAttack_kick("hitbox1", "box1", "attack_kick1", "w", "right", p1);
+		setupAttack("box2", "attack2", "k", "left", p2);
+		setupAttack_kick("hitbox2", "box2", "attack_kick2", "i", "left", p2);
+		preventCollision("box1", "box2", p1, p2);
+		gameLoop();
+	</script>
 </html>
