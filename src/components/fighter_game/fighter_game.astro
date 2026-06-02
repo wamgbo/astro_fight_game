@@ -316,19 +316,24 @@
 		initHearts(p2.heartBar, p2.heart);
 		function subHearts(pos) {
 			const container = document.getElementById(pos.heartBar);
-			if (pos.heart <= 0) {
-				alert("遊戲結束！");
-				window.location.reload();
+			if (pos.heart - 1 <= 0) {
+				// 使用 setTimeout 替代未定義的 delay
+				container.removeChild(container.lastElementChild);
+				setTimeout(() => {
+					alert("遊戲結束！");
+					window.location.reload();
+				}, 500);
+				return; // 遊戲結束後不再執行無敵狀態邏輯
 			}
 			if (container.children.length > 0 && !pos.isInvincible) {
-				container.removeChild(container.lastElementChild);
 				pos.heart--;
 				console.log(`剩餘生命: ${pos.heart}`);
 				pos.isInvincible = true;
+				container.removeChild(container.lastElementChild);
 			}
 			setTimeout(() => {
 				pos.isInvincible = false;
-			}, 1000);
+			}, 500);
 		}
 		function conunterHearts(pos) {
 			const container = document.getElementById(pos.heartBar);
@@ -480,7 +485,7 @@
 						if (attacking) {
 							atk.style.display = "block";
 						}
-					}, 19);
+					}, 180);
 				}
 			});
 
