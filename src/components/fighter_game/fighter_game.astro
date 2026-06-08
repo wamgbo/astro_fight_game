@@ -81,7 +81,7 @@
 		left: 135px;
 		top: 340px;
 
-		background: rgba(255, 0, 0, 0.2);
+		/* background: rgba(255, 0, 0, 0.2); */
 	}
 	.counter-hitbox {
 		position: absolute;
@@ -92,8 +92,8 @@
 		left: 135px;
 		top: 340px;
 
-		background: rgba(0, 255, 0, 0.18);
-		border: 2px solid rgba(0, 255, 0, 0.8);
+		/* background: rgba(0, 255, 0, 0.18); */
+		/* border: 2px solid rgba(0, 255, 0, 0.8); */
 		display: none;
 		pointer-events: none;
 	}
@@ -108,7 +108,7 @@
 		position: absolute; /* 變成相對於 .box 定位 */
 		width: 150px; /* 可依圖片寬度調整 */
 		height: 80px;
-		background: rgba(241, 196, 15, 0.4);
+		/* background: rgba(241, 196, 15, 0.4); */
 		display: none; /* 預設隱藏 */
 		top: 400px; /* 調整此數值來對齊你的拳頭高度 */
 	}
@@ -116,7 +116,7 @@
 		position: absolute; /* 變成相對於 .box 定位 */
 		width: 200px; /* 可依圖片寬度調整 */
 		height: 110px;
-		background: rgba(241, 196, 15, 0.4);
+		/* background: rgba(241, 196, 15, 0.4); */
 		display: none; /* 預設隱藏 */
 		top: 400px; /* 調整此數值來對齊你的拳頭高度 */
 	}
@@ -624,13 +624,13 @@
 									counter?.classList.add("active");
 									attackWindow = true;
 								}
-					}, 180);
+					}, 200);
 					setTimeout(() => {
 						if (attacking) {
 							counter?.classList.remove("active");
 							attackWindow = false;
 						}
-					}, 320);
+					}, 210);
 				}
 			});
 
@@ -769,79 +769,115 @@
 		}
 
 		// 4. 遊戲主迴圈
+		// 攻擊冷卻追蹤 (防止同一攻擊在多幀內重複觸發傷害)
+		const attackCooldown = {
+			attack1: 0,
+			attack_kick1: 0,
+			attack2: 0,
+			attack_kick2: 0,
+		};
+		const COOLDOWN_MS = 50; // 50ms 冷卻時間
+
 		function gameLoop() {
 			updateBox("box1", { left: "a", right: "d" }, p1);
 			updateBox("box2", { left: "j", right: "l" }, p2);
-			let player1GetCounter = false;
-			let player2GetCounter = false;
-			let player1Gethit = false;
-			let player2Gethit = false;
+			const now = performance.now();
+
+			// ========== 玩家2 受傷檢查 ==========
 			if (p2.isInvincible === false) {
+				// 優先度 1: 懲罰反擊 (擊中 counter2)
 				if (
-					hitCheck("attack1", "counter2") ||
-					hitCheck("attack_kick1", "counter2")
+					(hitCheck("attack1", "counter2") &&
+						now - attackCooldown.attack1 > COOLDOWN_MS) ||
+					(hitCheck("attack_kick1", "counter2") &&
+						now - attackCooldown.attack_kick1 > COOLDOWN_MS)
 				) {
-					console.log("玩家1觸發懲罰反擊！");
+					console.log("玩家1觸發懲罰反擊！玩家1扣血！");
 					spawnCounterEffect(p1.x + 200, p1.y + 200, "box1", p1);
-					subHearts(p1);
-				} else if (
-					hitCheck("attack1", "attack2") ||
-					hitCheck("attack1", "attack_kick2") ||
-					hitCheck("attack_kick1", "attack2") ||
+					subHearts(p1); // 玩家1受罰
+					attackCooldown.attack1 = now;
+					attackCooldown.attack_kick1 = now;
+				}
+				// 優先度 2: 相互攻擊 (攻擊互相碰撞)
+				else if (
+					(hitCheck("attack1", "attack2") &&
+						now - attackCooldown.attack1 > COOLDOWN_MS) ||
+					(hitCheck("attack1", "attack_kick2") &&
+						now - attackCooldown.attack1 > COOLDOWN_MS) ||
+					(hitCheck("attack_kick1", "attack2") &&
+						now - attackCooldown.attack_kick1 > COOLDOWN_MS) ||
 					(hitCheck("attack_kick1", "attack_kick2") &&
+						now - attackCooldown.attack_kick1 > COOLDOWN_MS &&
 						p2.isLocked === true)
 				) {
-					// 傳入 "box2" 作為受害者 ID
-					console.log("玩家1反擊成功！");
-					player2GetCounter = true;
+					console.log("攻擊相互碰撞！雙方都扣血！");
 					spawnCounterEffect(p2.x + 200, p2.y + 200, "box2", p2);
-					conunterHearts(p1);
-					subHearts(p2);
-				} else if (
-					hitCheck("attack1", "hitbox2") ||
+					conunterHearts(p1); // 玩家1獲得加成
+					subHearts(p2); // 玩家2扣血
+					attackCooldown.attack1 = now;
+					attackCooldown.attack_kick1 = now;
+				}
+				// 優先度 3: 正常命中 (擊中 hitbox2)
+				else if (
+					(hitCheck("attack1", "hitbox2") &&
+						now - attackCooldown.attack1 > COOLDOWN_MS) ||
 					(hitCheck("attack_kick1", "hitbox2") &&
-						player1Gethit === false)
+						now - attackCooldown.attack_kick1 > COOLDOWN_MS)
 				) {
 					console.log("玩家1攻擊命中玩家2！");
-					// 傳入 "box2" 作為受害者 ID
 					subHearts(p2);
-					player1Gethit = true;
 					spawnHitEffect(p2.x + 200, p2.y + 200, "box2", p2);
+					attackCooldown.attack1 = now;
+					attackCooldown.attack_kick1 = now;
 				}
-				// 檢查傷害 (建議使用之前的冷卻邏輯避免一次判定觸發多次)
 			}
 
+			// ========== 玩家1 受傷檢查 ==========
 			if (p1.isInvincible === false) {
+				// 優先度 1: 懲罰反擊 (擊中 counter1)
 				if (
-					hitCheck("attack2", "counter1") ||
-					hitCheck("attack_kick2", "counter1")
+					(hitCheck("attack2", "counter1") &&
+						now - attackCooldown.attack2 > COOLDOWN_MS) ||
+					(hitCheck("attack_kick2", "counter1") &&
+						now - attackCooldown.attack_kick2 > COOLDOWN_MS)
 				) {
-					console.log("玩家2觸發懲罰反擊！");
+					console.log("玩家2觸發懲罰反擊！玩家2扣血！");
 					spawnCounterEffect(p2.x + 200, p2.y + 200, "box2", p2);
-					subHearts(p2);
-				} else if (
-					hitCheck("attack2", "attack1") ||
-					hitCheck("attack2", "attack_kick1") ||
-					hitCheck("attack_kick2", "attack1") ||
+					subHearts(p2); // 玩家2受罰
+					attackCooldown.attack2 = now;
+					attackCooldown.attack_kick2 = now;
+				}
+				// 優先度 2: 相互攻擊 (攻擊互相碰撞)
+				else if (
+					(hitCheck("attack2", "attack1") &&
+						now - attackCooldown.attack2 > COOLDOWN_MS) ||
+					(hitCheck("attack2", "attack_kick1") &&
+						now - attackCooldown.attack2 > COOLDOWN_MS) ||
+					(hitCheck("attack_kick2", "attack1") &&
+						now - attackCooldown.attack_kick2 > COOLDOWN_MS) ||
 					(hitCheck("attack_kick2", "attack_kick1") &&
+						now - attackCooldown.attack_kick2 > COOLDOWN_MS &&
 						p1.isLocked === true)
 				) {
-					console.log("玩家2反擊成功！");
-					player1GetCounter = true;
-					// 傳入 "box1" 作为受害者 ID
+					console.log("攻擊相互碰撞！雙方都扣血！");
 					spawnCounterEffect(p1.x + 200, p1.y + 200, "box1", p1);
-					conunterHearts(p2);
-					subHearts(p2);
+					conunterHearts(p2); // 玩家2獲得加成
+					subHearts(p1); // 玩家1扣血
+					attackCooldown.attack2 = now;
+					attackCooldown.attack_kick2 = now;
 				}
-				if (
-					hitCheck("attack2", "hitbox1") ||
+				// 優先度 3: 正常命中 (擊中 hitbox1)
+				else if (
+					(hitCheck("attack2", "hitbox1") &&
+						now - attackCooldown.attack2 > COOLDOWN_MS) ||
 					(hitCheck("attack_kick2", "hitbox1") &&
-						player2Gethit === false)
+						now - attackCooldown.attack_kick2 > COOLDOWN_MS)
 				) {
-					// 傳入 "box1" 作为受害者 ID
+					console.log("玩家2攻擊命中玩家1！");
 					subHearts(p1);
-					player2Gethit = true;
 					spawnHitEffect(p1.x + 200, p1.y + 200, "box1", p1);
+					attackCooldown.attack2 = now;
+					attackCooldown.attack_kick2 = now;
 				}
 			}
 			// if (
