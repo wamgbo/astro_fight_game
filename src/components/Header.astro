@@ -1,0 +1,53 @@
+---
+// 可以在這裏定義選單資料，方便未來動態渲染
+const navItems = [
+    { name: "HOME", href: "#", active: true },
+    { name: "ROSTER", href: "#" },
+    { name: "SHOP", href: "#" },
+    { name: "RANK", href: "#" },
+];
+---
+
+<header
+    class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-16 py-4 backdrop-blur-md border-b-2 border-[#b8c3ff] bg-[#131315]/40"
+>
+    <div class="flex items-center gap-4">
+        <span
+            class="material-symbols-outlined text-[#b8c3ff] text-3xl font-bold"
+            >sports_kabaddi</span
+        >
+        <h1
+            class="text-xl md:text-3xl uppercase tracking-tighter italic font-black text-[#b8c3ff] aberration"
+        >
+            ARCADE STAGE 01
+        </h1>
+    </div>
+    <div class="flex items-center gap-6 md:gap-12">
+        <nav
+            class="hidden md:flex gap-6 lg:gap-10 font-mono text-xs font-bold tracking-widest"
+        >
+            {
+                navItems.map((item) => (
+                    <a
+                        href={item.href}
+                        class={`uppercase px-3 py-1 transition-all duration-75 hover:bg-[#b8c3ff] hover:text-[#001356] ${item.active ? "text-[#b8c3ff] border-b-2 border-[#b8c3ff]" : "text-[#c4c5d9]"}`}
+                    >
+                        {item.name}
+                    </a>
+                ))
+            }
+        </nav>
+        <div class="flex items-center gap-4">
+            <div class="text-right hidden xl:block font-mono">
+                <p class="text-[10px] text-[#b8c3ff] uppercase font-bold">
+                    Player Profile
+                </p>
+                <p class="text-sm text-[#e4e2e4]">CHALLENGER_01</p>
+            </div>
+            <span
+                class="material-symbols-outlined text-[#c4c5d9] hover:text-[#b8c3ff] cursor-pointer text-2xl"
+                >settings</span
+            >
+        </div>
+    </div>
+</header>

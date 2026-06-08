@@ -1,0 +1,190 @@
+---
+interface Props {
+    title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html class="dark" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <title>{title}</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body
+        class="min-h-screen flex flex-col items-center justify-center relative overflow-hidden crt-flicker select-none bg-[#131315] text-[#e4e2e4]"
+    >
+        <div class="fixed inset-0 z-0 overflow-hidden">
+            <img
+                alt="Sunset cityscape rooftop dojo"
+                class="w-full h-full object-cover image-pixelated scale-105"
+                src="https://lh3.googleusercontent.com/aida/AP1WRLt2kSwSwVqss6dDyW7B_tLFBO9ybz1WnkcgbIsULDDjNnkht8jBmSA5ZCbndaSFHjdyONbEHJqC5Oo0Sdcpv_sre_ZnEbtPB9pcOmBcobwyOPNsINcEjEG_3kA7gREz23M-YkyvmTgNk_9Aw9mQVHj7gescqXG9H18xomuRPIc_RtRCOQyPyLdRqvqYHrp98oJuGuoNS_CnflUKKf-aC-7I2Sekt1VjttmTj_2Qh-DWJqKRWXgIlF2FqA"
+            />
+            <div
+                class="absolute inset-0 bg-gradient-to-t from-[#131315] via-transparent to-[#131315]/30"
+            >
+            </div>
+        </div>
+
+        <div class="crt-overlay"></div>
+        <div class="crt-scanline"></div>
+
+        <slot />
+
+        <div
+            class="fixed top-24 left-8 w-12 h-12 border-t-4 border-l-4 border-[#b8c3ff]/40 pointer-events-none"
+        >
+        </div>
+        <div
+            class="fixed top-24 right-8 w-12 h-12 border-t-4 border-r-4 border-[#ffb4aa]/40 pointer-events-none"
+        >
+        </div>
+        <div
+            class="fixed bottom-8 left-8 w-12 h-12 border-b-4 border-l-4 border-[#b8c3ff]/40 pointer-events-none xl:hidden"
+        >
+        </div>
+        <div
+            class="fixed bottom-8 right-8 w-12 h-12 border-b-4 border-r-4 border-[#ffb4aa]/40 pointer-events-none xl:hidden"
+        >
+        </div>
+    </body>
+</html>
+
+<style is:global>
+    /* 融入原本的關鍵字動畫與特殊邊框 */
+    @keyframes flicker {
+        0% {
+            opacity: 0.97;
+        }
+        5% {
+            opacity: 0.95;
+        }
+        10% {
+            opacity: 0.9;
+        }
+        15% {
+            opacity: 0.98;
+        }
+        30% {
+            opacity: 0.93;
+        }
+        50% {
+            opacity: 0.97;
+        }
+        80% {
+            opacity: 0.94;
+        }
+        100% {
+            opacity: 0.98;
+        }
+    }
+
+    @keyframes scanline {
+        0% {
+            transform: translateY(-100%);
+        }
+        100% {
+            transform: translateY(100%);
+        }
+    }
+
+    @keyframes blink {
+        0%,
+        100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0;
+        }
+    }
+
+    .crt-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background:
+            linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+            linear-gradient(
+                90deg,
+                rgba(255, 0, 0, 0.06),
+                rgba(0, 255, 0, 0.02),
+                rgba(0, 0, 255, 0.06)
+            );
+        background-size:
+            100% 4px,
+            3px 100%;
+        pointer-events: none;
+        z-index: 100;
+    }
+
+    .crt-flicker {
+        animation: flicker 0.15s infinite;
+    }
+
+    .crt-scanline {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100px;
+        background: linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.05) 50%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        animation: scanline 8s linear infinite;
+        pointer-events: none;
+        z-index: 101;
+    }
+
+    .pixel-border {
+        box-shadow:
+            0 -4px 0 0 #b8c3ff,
+            0 4px 0 0 #b8c3ff,
+            -4px 0 0 0 #b8c3ff,
+            4px 0 0 0 #b8c3ff;
+    }
+
+    .pixel-border-secondary {
+        box-shadow:
+            0 -2px 0 0 #ffb4aa,
+            0 2px 0 0 #ffb4aa,
+            -2px 0 0 0 #ffb4aa,
+            2px 0 0 0 #ffb4aa;
+    }
+
+    .blink {
+        animation: blink 0.8s steps(2, start) infinite;
+    }
+    .aberration {
+        text-shadow:
+            3px 0 #ffb4aa,
+            -3px 0 #b8c3ff;
+    }
+    .image-pixelated {
+        image-rendering: pixelated;
+    }
+
+    /* 字體對應綁定 */
+    h1,
+    .font-headline {
+        font-family: "Space Grotesk", sans-serif;
+    }
+    code,
+    .font-mono {
+        font-family: "JetBrains Mono", monospace;
+    }
+</style>

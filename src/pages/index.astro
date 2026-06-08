@@ -1,19 +1,344 @@
 ---
-import Welcome from "../components/Welcome.astro";
-import Layout from "../layouts/Layout.astro";
 import TopBar from "../layouts/TopBar.astro";
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
-const sessionCookie = Astro.cookies.get("user_session");
-
-// 🔥 使用 console.log 輸出到終端機
-console.log("--- 檢查單一 Cookie 物件 ---");
-console.log("是否存在:", Astro.cookies.has("user_session"));
-console.log("Cookie 的純字串值:", sessionCookie?.value);
-console.log("完整的 Cookie 紀錄:", sessionCookie);
 ---
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <title>ARCADE STAGE 01 - HADOUKEN  init</title>
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+        
+        <style>
+            /* ── 核心作用域設定：將所有街機樣式隔離在專屬的 class 內 ── */
+            .arcade-interface {
+                /* 變數宣告：定義原本 Tailwind 配置的街機專屬配色 */
+                --color-background: #131315;
+                --color-surface: #131315;
+                --color-surface-low: #1b1b1d;
+                --color-surface-highest: #353437;
+                --color-primary: #b8c3ff;
+                --color-secondary: #ffb4aa;
+                --color-on-primary: #002388;
+                --color-on-primary-fixed: #001356;
+                --color-on-surface: #e4e2e4;
+                --color-on-surface-variant: #c4c5d9;
+                --color-secondary-container: #c5020b;
+                --color-surface-variant: #353437;
 
-<Layout>
-	<TopBar />
-	<Welcome />
-</Layout>
+                /* 基礎重設：確保此組件內部不受外部全域 CSS 影響 */
+                font-family: 'JetBrains Mono', monospace;
+                background-color: var(--color-background);
+                color: var(--color-on-surface);
+                position: relative;
+                overflow: hidden;
+                height: 100vh;
+                width: 100vw;
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                items-center: center;
+                justify-content: center;
+            }
+
+            .arcade-interface * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            /* ── 原生動畫 ── */
+            @keyframes crt-flicker {
+                0%, 15%, 50%, 100% { opacity: 0.98; }
+                5% { opacity: 0.95; }
+                10% { opacity: 0.9; }
+                30% { opacity: 0.93; }
+                80% { opacity: 0.94; }
+            }
+            @keyframes crt-scanline {
+                0% { transform: translateY(-100%); }
+                100% { transform: translateY(100%); }
+            }
+            @keyframes text-blink {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0; }
+            }
+            @keyframes progress-pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.4; }
+            }
+
+            /* ── 隔離的 CSS 特效類別 ── */
+            .arcade-interface .crt-flicker-layer {
+                animation: crt-flicker 0.15s infinite;
+            }
+            .arcade-interface .crt-overlay {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                            linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+                background-size: 100% 4px, 3px 100%;
+                pointer-events: none; z-index: 100;
+            }
+            .arcade-interface .crt-scanline {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100px;
+                background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0) 100%);
+                animation: crt-scanline 8s linear infinite;
+                pointer-events: none; z-index: 101;
+            }
+            .arcade-interface .pixel-border {
+                box-shadow: 0 -4px 0 0 var(--color-primary), 0 4px 0 0 var(--color-primary), -4px 0 0 0 var(--color-primary), 4px 0 0 0 var(--color-primary);
+            }
+            .arcade-interface .pixel-border-secondary {
+                box-shadow: 0 -2px 0 0 var(--color-secondary), 0 2px 0 0 var(--color-secondary), -2px 0 0 0 var(--color-secondary), 2px 0 0 0 var(--color-secondary);
+            }
+            .arcade-interface .blink {
+                animation: text-blink 0.8s steps(2, start) infinite;
+            }
+            .arcade-interface .aberration {
+                text-shadow: 3px 0 var(--color-secondary), -3px 0 var(--color-primary);
+            }
+
+            /* ── 介面排版佈局與元件（重寫原 Tailwind 類別） ── */
+            .arcade-interface .bg-fixed-container {
+                position: fixed; inset: 0; z-index: 0; overflow: hidden;
+            }
+            .arcade-interface .bg-image {
+                width: 100%; height: 100%; object-cover: cover; image-rendering: pixelated;
+            }
+            .arcade-interface .bg-gradient-overlay {
+                position: absolute; inset: 0;
+                background: linear-gradient(to top, var(--color-surface), transparent, rgba(19, 19, 21, 0.3));
+            }
+            .arcade-interface header {
+                position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+                display: flex; justify-content: space-between; items-center: center;
+                padding: 1rem 4rem; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+                border-bottom: 2px solid var(--color-primary); background-color: rgba(19, 19, 21, 0.4);
+            }
+            .arcade-interface header h1 {
+                font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-style: italic; font-weight: 900;
+                letter-spacing: -0.01em; text-transform: uppercase; color: var(--color-primary);
+            }
+            .arcade-interface nav { display: flex; gap: 1.5rem; }
+            .arcade-interface nav a {
+                font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none;
+                color: var(--color-on-surface-variant); padding: 0.25rem 0.75rem; border-bottom: 2px solid transparent; transition: all 0.075s;
+            }
+            .arcade-interface nav a.active {
+                color: var(--color-primary); border-bottom-color: var(--color-primary);
+            }
+            .arcade-interface nav a:hover {
+                background-color: var(--color-primary); color: var(--color-on-primary);
+            }
+            .arcade-interface .player-section { display: flex; items-center: center; gap: 1rem; }
+            .arcade-interface .player-info { text-align: right; }
+            @media (max-width: 1280px) { .arcade-interface .player-info { display: none; } }
+            
+            .arcade-interface main {
+                position: relative; z-index: 10; display: flex; flex-direction: column;
+                items-center: center; justify-content: center; text-align: center;
+                padding: 0 1rem; width: 100%; max-w: 80rem; margin: 0 auto; height: 100%;
+            }
+            .arcade-interface .hero-title-box { transform: scale(1.1); margin-bottom: 2rem; }
+            .arcade-interface .hero-title {
+                font-family: 'Space Grotesk', sans-serif; font-size: 80px; font-weight: 900; font-style: italic;
+                text-transform: uppercase; color: var(--color-primary); line-height: 1; letter-spacing: -0.02em;
+            }
+            @media (min-width: 768px) { .arcade-interface .hero-title { font-size: 140px; } }
+            .arcade-interface .hero-title span {
+                color: var(--color-secondary); filter: drop-shadow(0 10px 0 #93000a);
+            }
+            .arcade-interface .badge-container { margin-top: 2rem; display: flex; justify-content: center; gap: 1.5rem; }
+            .arcade-interface .badge {
+                padding: 0.5rem 1.5rem; background-color: rgba(184, 195, 255, 0.2); border: 1px solid var(--color-primary);
+                color: var(--color-primary); font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+            }
+            .arcade-interface .badge.stable {
+                background-color: rgba(255, 180, 170, 0.2); border-color: var(--color-secondary); color: var(--color-secondary);
+            }
+
+            .arcade-interface .btn-container { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4rem; width: 100%; }
+            .arcade-interface .start-btn {
+                background-color: rgba(53, 52, 55, 0.6); padding: 0.25rem; cursor: pointer; border: none;
+                transition: all 0.1s; backdrop-filter: blur(4px); width: 800px;
+            }
+            .arcade-interface .start-btn:hover { transform: scale(1.05); }
+            .arcade-interface .start-btn:active { transform: scale(0.95); }
+            .arcade-interface .start-btn .btn-inner {
+                background-color: var(--color-primary); padding: 2rem 3rem; border: 4px solid var(--color-on-primary-fixed);
+                box-shadow: 0 0 30px rgba(184, 195, 255, 0.4);
+            }
+            .arcade-interface .start-btn-text {
+                font-family: 'Space Grotesk', sans-serif; font-size: 40px; text-transform: uppercase;
+                color: var(--color-on-primary); letter-spacing: 0.2em; font-weight: 900;
+            }
+
+            .arcade-interface .bottom-bar {
+                position: fixed; bottom: 2rem; left: 0; right: 0; z-index: 50;
+                display: flex; justify-content: center; padding: 0 4rem;
+            }
+            .arcade-interface .bottom-bar-content {
+                background-color: rgba(27, 27, 29, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+                border-top: 2px solid rgba(184, 195, 255, 0.4); padding: 1rem; display: flex;
+                items-center: center; width: 100%; justify-content: space-between; gap: 2rem;
+            }
+            .arcade-interface .bar-info-block { display: flex; items-center: center; gap: 1.5rem; flex-shrink: 0; }
+            .arcade-interface .info-label { font-size: 10px; color: var(--color-primary); text-transform: uppercase; display: block; }
+            .arcade-interface .info-value { font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--color-on-surface); font-weight: 700; text-transform: uppercase; }
+            .arcade-interface .progress-track { width: 6rem; height: 4px; background-color: var(--color-surface-variant); position: relative; }
+            .arcade-interface .progress-fill { position: absolute; inset: 0; background-color: var(--color-primary); width: 75%; }
+            
+            .arcade-interface .center-buttons { display: flex; gap: 1rem; }
+            .arcade-interface .sub-btn {
+                background-color: rgba(31, 31, 33, 0.6); padding: 0.5rem 1rem; border: none; cursor: pointer; transition: all 0.2s;
+            }
+            .arcade-interface .sub-btn:hover { background-color: rgba(197, 2, 11, 0.9); }
+            .arcade-interface .sub-btn .btn-flex { display: flex; items-center: center; gap: 0.5rem; }
+            .arcade-interface .sub-btn span { color: var(--color-secondary); }
+            .arcade-interface .sub-btn:hover span { color: #fff; }
+            .arcade-interface .sub-btn .sub-btn-text { font-size: 10px; text-transform: uppercase; font-weight: 700; }
+
+            .arcade-interface .dot-signal { display: flex; gap: 4px; }
+            .arcade-interface .dot { width: 8px; height: 8px; background-color: var(--color-secondary); }
+            .arcade-interface .dot.off { background-color: var(--color-surface-variant); }
+
+            .arcade-interface footer.bottom-progress {
+                position: fixed; bottom: 0; left: 0; width: 100%; height: 8px; background-color: rgba(184, 195, 255, 0.3); z-index: 50;
+            }
+            .arcade-interface footer.bottom-progress .pulse-bar {
+                height: 100%; background-color: var(--color-primary); width: 33.333%; animation: progress-pulse 2s infinite;
+            }
+
+            .arcade-interface .corner-bracket {
+                position: fixed; width: 3rem; height: 3rem; pointer-events: none; z-index: 50;
+            }
+            .arcade-interface .bracket-tl { top: 6rem; left: 2rem; border-top: 4px solid rgba(184, 195, 255, 0.4); border-l: 4px solid rgba(184, 195, 255, 0.4); }
+            .arcade-interface .bracket-tr { top: 6rem; right: 2rem; border-top: 4px solid rgba(255, 180, 170, 0.4); border-r: 4px solid rgba(255, 180, 170, 0.4); }
+            .arcade-interface .bracket-bl { bottom: 2rem; left: 2rem; border-bottom: 4px solid rgba(184, 195, 255, 0.4); border-l: 4px solid rgba(184, 195, 255, 0.4); }
+            .arcade-interface .bracket-br { bottom: 2rem; right: 2rem; border-bottom: 4px solid rgba(255, 180, 170, 0.4); border-r: 4px solid rgba(255, 180, 170, 0.4); }
+            @media (min-width: 1280px) {
+                .arcade-interface .bracket-bl, .arcade-interface .bracket-br { display: none; }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="arcade-interface crt-flicker-layer">
+            
+            <div class="bg-fixed-container">
+                <img alt="Sunset cityscape rooftop dojo" class="bg-image" src="https://lh3.googleusercontent.com/aida/AP1WRLt2kSwSwVqss6dDyW7B_tLFBO9ybz1WnkcgbIsULDDjNnkht8jBmSA5ZCbndaSFHjdyONbEHJqC5Oo0Sdcpv_sre_ZnEbtPB9pcOmBcobwyOPNsINcEjEG_3kA7gREz23M-YkyvmTgNk_9Aw9mQVHj7gescqXG9H18xomuRPIc_RtRCOQyPyLdRqvqYHrp98oJuGuoNS_CnflUKKf-aC-7I2Sekt1VjttmTj_2Qh-DWJqKRWXgIlF2FqA" />
+                <div class="bg-gradient-overlay"></div>
+            </div>
+			
+            <div class="crt-overlay"></div>
+            <div class="crt-scanline"></div>
+
+			<TopBar />
+            <main>
+                <div class="hero-title-box">
+                    <h1 class="hero-title aberration" style="text-shadow: 4px 4px 0 rgba(0,35,136,0.5);">
+                        67
+                        <span>道館</span>
+                    </h1>
+                    <div class="badge-container">
+                        <div class="badge">VERSION 2.0.4</div>
+                        <div class="badge stable">STABLE BUILD</div>
+                    </div>
+                </div>
+
+                <div class="btn-container">
+                    <button class="pixel-border start-btn">
+                        <div class="btn-inner">
+                            <span class="start-btn-text blink">START GAME</span>
+                        </div>
+                    </button>
+                </div>
+            </main>
+
+            <div class="bottom-bar">
+                <div class="bottom-bar-content">
+                    <div class="bar-info-block">
+                        <div>
+                            <span class="info-label">Sector</span>
+                            <span class="info-value">ROOFTOP DOJO - S7</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="center-buttons">
+                        <button class="pixel-border-secondary sub-btn">
+                            <div class="btn-flex">
+                                <span class="material-symbols-outlined">person_search</span>
+                                <span class="sub-btn-text">Roster</span>
+                            </div>
+                        </button>
+                        <button class="pixel-border-secondary sub-btn">
+                            <div class="btn-flex">
+                                <span class="material-symbols-outlined">settings_input_component</span>
+                                <span class="sub-btn-text">Options</span>
+                            </div>
+                        </button>
+                        <button class="pixel-border-secondary sub-btn">
+                            <div class="btn-flex">
+                                <span class="material-symbols-outlined">military_tech</span>
+                                <span class="sub-btn-text">Rank</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="bar-info-block" style="text-align: right;">
+                        <div>
+                            <span class="info-label" style="color: var(--color-secondary);">Network</span>
+                            <span class="info-value">ONLINE - LOBBY 04</span>
+                        </div>
+                        <div class="dot-signal">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot off"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="bottom-progress">
+                <div class="pulse-bar"></div>
+            </footer>
+
+            <div class="corner-bracket bracket-tl"></div>
+            <div class="corner-bracket bracket-tr"></div>
+            <div class="corner-bracket bracket-bl"></div>
+            <div class="corner-bracket bracket-br"></div>
+
+        </div>
+
+        <script>
+            const startGame = () => {
+                const btn = document.querySelector(".arcade-interface .start-btn");
+                btn.style.transform = "scale(0.95)";
+                btn.querySelector(".btn-inner").style.backgroundColor = "#dde1ff";
+                setTimeout(() => {
+                    console.log("READY... FIGHT!");
+                    window.location.href = "/demo";
+                }, 100);
+            };
+
+            document.addEventListener("keydown", (e) => {
+                if (e.code === "Enter" || e.code === "Space") startGame();
+            });
+
+            document.querySelector(".arcade-interface .start-btn")?.addEventListener("click", startGame);
+
+            document.querySelectorAll(".arcade-interface button, .arcade-interface a").forEach((el) => {
+                el.addEventListener("mouseenter", () => {
+                    el.style.opacity = "0.8";
+                    setTimeout(() => el.style.opacity = "", 50);
+                });
+            });
+        </script>
+    </body>
+</html>

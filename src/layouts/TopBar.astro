@@ -1,6 +1,6 @@
 ---
 // src/components/TopBar.astro
-const { brandName = "MyWebsite" } = Astro.props;
+const { brandName = "67道館" } = Astro.props;
 
 // 導覽列的選單資料
 const navItems = [
@@ -11,104 +11,259 @@ const navItems = [
 ];
 ---
 
-<header class="top-bar">
-  <div class="container">
-    <!-- Logo 區域 -->
-    <a href="/" class="brand">{brandName}</a>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 
-    <!-- 導覽選單 -->
-    <nav class="nav-links">
-      {navItems.map((item) => <a href={item.href}>{item.text}</a>)}
-    </nav>
+<header class="top-bar">
+  <div class="top-bar-content">
+    <div class="scanline"></div>
+    
+    <div class="container">
+      <div class="brand-wrapper">
+        <div class="icon-box">
+          <span class="material-symbols-outlined icon-glow">sports_kabaddi</span>
+        </div>
+        <a href="/" class="brand-text">{brandName}</a>
+      </div>
+
+      <nav class="nav-links">
+        {navItems.map((item) => (
+          <a href={item.href} class="nav-btn">{item.text}</a>
+        ))}
+      </nav>
+
+      <button class="menu-toggle-btn">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+    </div>
+    
+    <div class="bottom-glow"></div>
   </div>
 </header>
 
 <script>
   const topBar = document.querySelector(".top-bar");
+  let isMouseNearTop = false;
 
   if (topBar) {
+    // 監聽全域滑鼠移動
     window.addEventListener("mousemove", (event) => {
-      // event.clientY 可以抓到滑鼠在視窗中的 Y 軸位置 (單位: 像素)
-      if (event.clientY < 30) {
-        topBar.classList.add("show"); // 滑鼠接近頂端：顯示
-      } else if (event.clientY > 70) {
-        topBar.classList.remove("show"); // 滑鼠離開上半部：隱藏
+      if (event.clientY < 40) {
+        if (!isMouseNearTop) {
+          topBar.classList.add("show");
+          isMouseNearTop = true;
+        }
+      } else if (event.clientY > 90) {
+        // 只有在滑鼠移出 topBar 本身範圍，且 Y 軸大於 90 時才隱藏
+        if (isMouseNearTop) {
+          topBar.classList.remove("show");
+          isMouseNearTop = false;
+        }
+      }
+    });
+
+    // 防止滑鼠停留在選單上時，因為某些判定而突然縮回去
+    topBar.addEventListener("mouseenter", () => {
+      isMouseNearTop = true;
+      topBar.classList.add("show");
+    });
+
+    topBar.addEventListener("mouseleave", (event) => {
+      // 確保是真的往下移出才隱藏
+      if ((event as MouseEvent).clientY > 90) {
+        topBar.classList.remove("show");
+        isMouseNearTop = false;
       }
     });
   }
 </script>
-<style>
-  /* 頂部導覽列主體 */
-  .top-bar {
-    background-color: #ffffff;
-    border-bottom: 1px solid #e5e7eb;
-    position: fixed; /* 🔥 改為 fixed 才能懸浮在最上層而不推擠下方遊戲畫面 */
-    width: 100%; /* 🔥 確保寬度撐滿 */
-    top: 0;
-    left: 0; /* 🔥 修正 fixed 定位點 */
-    z-index: 100;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
-    /* 🔥 預設往上移 100% 藏起來，並加上平滑滑出效果 */
+<style>
+  /* --- 基礎定位（隱藏在最上方） --- */
+  .top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
     transform: translateY(-100%);
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.25s cubic-bezier(0.2, 1, 0.3, 1);
   }
 
-  /* 🔥 當觸發此類別時，滑順地向下顯示出來 */
+  /* 觸發顯示狀態 */
   .top-bar.show {
     transform: translateY(0);
   }
 
-  /* 限制最大寬度並置中 */
+  /* 街機風外觀、邊框、雙重陰影 */
+  .top-bar-content {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, #2e1a47 0%, #1a1c1f 100%);
+    border-bottom: 4px solid;
+    border-image: linear-gradient(to right, #ff5f6d, #ffc371) 1;
+    box-shadow: 0 4px 15px rgba(255, 95, 109, 0.4),
+                0 4px 0 0 #2e5bff,
+                0 8px 0 0 rgba(46, 91, 255, 0.3);
+  }
+
+  /* CRT 電視掃描線特效 */
+  .scanline {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    opacity: 0.3;
+    z-index: 1;
+  }
+
+  /* 內容容器限制寬度並置中 */
   .container {
+    position: relative;
+    z-index: 10;
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1.5rem;
-    height: 64px;
+    height: 72px;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
-  /* Logo 樣式 */
-  .brand {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1f2937;
-    text-decoration: none;
-    letter-spacing: -0.025em;
+  /* --- Logo 區域 --- */
+  .brand-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
 
-  /* 選單連結區塊 */
+  .icon-box {
+    background-color: #930005;
+    padding: 4px;
+    border: 2px solid #ffdad5;
+    box-shadow: 2px 2px 0 #410001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .icon-glow {
+    font-variation-settings: 'FILL' 1;
+    color: #ffc371;
+    font-size: 1.875rem;
+    animation: text-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .brand-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    background: linear-gradient(to bottom, #ffd700, #ff8c00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(1px 1px 0px #000);
+    animation: text-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* --- 3D 像素感導覽按鈕 --- */
   .nav-links {
     display: flex;
-    gap: 1.5rem;
+    gap: 1rem;
   }
 
-  /* 單個連結樣式 */
-  .nav-links a {
-    color: #4b5563;
+  .nav-btn {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
     text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: color 0.2s ease;
+    color: #ffdad5;
+    border: 2px solid #ff5f6d;
+    background-color: #1f1f21;
+    padding: 0.5rem 1.5rem;
+    box-shadow: 4px 4px 0 0 #410001;
+    transition: all 0.1s ease-in-out;
   }
 
-  /* 滑鼠懸停效果 */
-  .nav-links a:hover {
-    color: #2563eb; /* 現代感藍色 */
+  .nav-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 0 #410001;
+    color: #ffffff;
   }
 
-  /* 手機版簡單適應（選單字體縮小、間距變窄） */
-  @media (max-width: 640px) {
-    .container {
-      padding: 0 1rem;
+  .nav-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+
+  /* --- RWD 行動版漢堡排按鈕 --- */
+  .menu-toggle-btn {
+    display: none;
+    background-color: #1f1f21;
+    color: #ffc371;
+    border: 2px solid #ff5f6d;
+    padding: 0.5rem;
+    box-shadow: inset -4px -4px 0 0 rgba(0,0,0,0.4),
+                inset 4px 4px 0 0 rgba(255,255,255,0.2),
+                0 4px 0 0 rgba(0,0,0,0.5),
+                0 0 10px rgba(255, 95, 109, 0.5);
+    cursor: pointer;
+  }
+
+  .menu-toggle-btn:active {
+    transform: translateY(2px);
+    box-shadow: inset 4px 4px 0 0 rgba(0,0,0,0.4),
+                inset -4px -4px 0 0 rgba(255,255,255,0.1),
+                0 2px 0 0 rgba(0,0,0,0.5);
+  }
+
+  /* --- 底部邊界發光條 --- */
+  .bottom-glow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background-color: #ffdad5;
+    box-shadow: 0 4px 10px #930005, 0 8px 20px #410001;
+    opacity: 0.8;
+  }
+
+  /* 霓虹呼吸燈動畫 */
+  @keyframes text-pulse {
+    0%, 100% { 
+      text-shadow: 0 0 10px #ff5f6d, 0 0 2px #fff; 
+      opacity: 1; 
     }
+    50% { 
+      text-shadow: 0 0 20px #ffb4aa, 0 0 5px #ffb4aa; 
+      opacity: 0.9; 
+    }
+  }
+
+  /* --- 響應式手機斷點 --- */
+  @media (max-width: 768px) {
     .nav-links {
-      gap: 1rem;
+      display: none;
     }
-    .nav-links a {
-      font-size: 0.875rem;
+    .menu-toggle-btn {
+      display: block;
+    }
+    .brand-text {
+      font-size: 1.1rem;
+      letter-spacing: 0.15em;
+    }
+    .container {
+      height: 60px;
     }
   }
 </style>
