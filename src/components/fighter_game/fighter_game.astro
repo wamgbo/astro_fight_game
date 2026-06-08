@@ -336,7 +336,24 @@
 
 <body>
 	<div class="game-container">
+		<button
+			id="debugBtn"
+			style="
+  position:absolute; top:670px; right:20px; z-index:2000;
+  background:#1a1a1a; color:#0ff; border:1px solid #0ff;
+  font-family:'Courier New',monospace; font-size:12px;
+  padding:6px 14px; cursor:pointer; letter-spacing:2px;
+"
+			>[ DEBUG: OFF ]</button
+		>
 		<div class="game-board">
+			<canvas
+				id="gameOverCanvas"
+				width="1200"
+				height="700"
+				style="display:none;position:absolute;top:0;left:0;z-index:9999;image-rendering:pixelated;"
+			></canvas>
+
 			<div class="instructions">
 				玩家 1: A/D 移動, S 攻擊 | 玩家 2: J/L 移動, K 攻擊
 			</div>
@@ -356,10 +373,204 @@
 			<div id="attack2" class="attack"></div>
 			<div id="attack_kick1" class="attack2"></div>
 			<div id="attack_kick2" class="attack2"></div>
+			<canvas id="gameCanvas" width="800" height="450"></canvas>
 		</div>
 	</div>
 
 	<script>
+		function showGameOver() {
+			const canvas = document.getElementById("gameOverCanvas");
+			canvas.style.display = "block";
+			const ctx = canvas.getContext("2d");
+			const W = 1200,
+				H = 700;
+			let t = 0,
+				hovBtn = false;
+			const BX = W / 2 - 200,
+				BY = 500,
+				BW = 400,
+				BH = 90;
+
+			function px(x, y, w, h, c) {
+				ctx.fillStyle = c;
+				ctx.fillRect(x, y, w, h);
+			}
+
+			function drawBg() {
+				px(0, 0, W, H, "#0a0006");
+				for (let x = 0; x < W; x += 40)
+					for (let y = 0; y < H; y += 40) {
+						px(x, y, 1, 40, "rgba(180,0,0,0.06)");
+						px(x, y, 40, 1, "rgba(180,0,0,0.06)");
+					}
+			}
+
+			function drawSlashLines() {
+				const alpha = 0.06 + Math.abs(Math.sin(t * 0.04)) * 0.08;
+				ctx.strokeStyle = `rgba(255,30,0,${alpha})`;
+				ctx.lineWidth = 3;
+				for (let i = 0; i < 6; i++) {
+					const ox = Math.sin(t * 0.03 + i) * 15;
+					ctx.beginPath();
+					ctx.moveTo(ox + i * 210, 0);
+					ctx.lineTo(ox + i * 210 + 80, H);
+					ctx.stroke();
+				}
+			}
+
+			function drawFloorLine() {
+				const fy = H - 110;
+				px(0, fy, W, 3, "#8b0000");
+				px(0, fy + 3, W, 2, "#ff3300");
+				for (let x = 0; x < W; x += 60)
+					px(x, fy + 6, 30, 1, "rgba(255,80,0,0.3)");
+			}
+
+			function drawSilhouette(x, flip) {
+				ctx.save();
+				if (flip) {
+					ctx.translate(x * 2, 0);
+					ctx.scale(-1, 1);
+				}
+				const b = x,
+					s = 2;
+				px(b + 56, 130, 44, 44, "#1a0010");
+				px(b + 48, 122, 60, 16, "#1a0010");
+				px(b + 52, 174, 52, 110, "#1a0010");
+				px(b + 28, 190, 30, 80, "#1a0010");
+				px(b + 104, 188, 28, 76, "#1a0010");
+				px(b + 56, 284, 28, 110, "#1a0010");
+				px(b + 84, 284, 28, 110, "#1a0010");
+				px(b + 40, 392, 36, 18, "#1a0010");
+				px(b + 84, 392, 40, 18, "#1a0010");
+				ctx.restore();
+			}
+
+			function drawKO() {
+				const pulse = Math.sin(t * 0.07) * 5;
+				ctx.textAlign = "center";
+				const layers = [
+					{ c: "#3b0000", ox: 10, oy: 10 },
+					{ c: "#7a0000", ox: 5, oy: 5 },
+					{ c: "#cc0000", ox: 2, oy: 2 },
+					{ c: "#ff2200", ox: 0, oy: 0 },
+					{ c: "#ff7755", ox: -2, oy: -2 },
+				];
+				ctx.font = `900 ${200 + pulse}px "Arial Black","Arial",sans-serif`;
+				layers.forEach((l) => {
+					ctx.fillStyle = l.c;
+					ctx.fillText("K.O.", W / 2 + l.ox, 280 + l.oy + pulse / 2);
+				});
+
+				ctx.font = `900 58px "Arial Black","Arial",sans-serif`;
+				const gp = Math.sin(t * 0.1) * 3;
+				[
+					{ c: "#2a0000", ox: 5, oy: 5 },
+					{ c: "#880000", ox: 2, oy: 2 },
+					{ c: "#ff4400", ox: 0, oy: 0 },
+				].forEach((l) => {
+					ctx.fillStyle = l.c;
+					ctx.fillText("GAME  OVER", W / 2 + l.ox, 340 + l.oy + gp);
+				});
+			}
+
+			function drawHitSparks() {
+				[
+					[W / 2 - 80, 150],
+					[W / 2 + 100, 130],
+					[W / 2 - 20, 180],
+					[W / 2 + 60, 165],
+				].forEach(([sx, sy], i) => {
+					if (Math.sin(t * 0.14 + i * 1.3) > 0.4) {
+						const s = 5 + i * 2;
+						px(sx - s, sy - s, s * 2, s * 2, "#ffcc00");
+						px(sx - 2, sy - s * 2, 4, s * 4, "#ff6600");
+						px(sx - s * 2, sy - 2, s * 4, 4, "#ff6600");
+					}
+				});
+			}
+
+			function drawButton() {
+				const flash = Math.sin(t * 0.1) > 0.3;
+				if (hovBtn) {
+					px(BX - 4, BY - 4, BW + 8, BH + 8, "#ff2200");
+					px(BX, BY, BW, BH, "#cc1100");
+				} else {
+					px(BX - 3, BY - 3, BW + 6, BH + 6, "#550000");
+					px(BX, BY, BW, BH, "#1a0008");
+					if (flash) {
+						ctx.strokeStyle = "#ff2200";
+						ctx.lineWidth = 3;
+						ctx.strokeRect(BX + 2, BY + 2, BW - 4, BH - 4);
+					}
+				}
+				px(BX + 6, BY + 6, BW - 12, 3, hovBtn ? "#ff6644" : "#440000");
+				px(
+					BX + 6,
+					BY + BH - 9,
+					BW - 12,
+					3,
+					hovBtn ? "#660000" : "#220000",
+				);
+				ctx.font = `900 32px "Arial Black","Arial",sans-serif`;
+				ctx.textAlign = "center";
+				ctx.fillStyle = hovBtn ? "#ffffff" : "#ff3300";
+				ctx.fillText("[ CONTINUE? ]", W / 2, BY + BH * 0.68);
+			}
+
+			function drawTimer() {
+				const count = Math.max(0, 9 - Math.floor(t / 30));
+				ctx.font = `900 24px "Courier New",monospace`;
+				ctx.textAlign = "left";
+				ctx.fillStyle = "rgba(255,60,0,0.7)";
+				ctx.fillText(`CONTINUE: ${count}`, 30, H - 30);
+				if (count === 0) {
+					setTimeout(() => window.location.reload(), 800);
+				}
+			}
+
+			function drawCRT() {
+				ctx.fillStyle = "rgba(0,0,0,0.12)";
+				for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 2);
+				px(0, 0, 8, H, "rgba(0,0,0,0.3)");
+				px(W - 8, 0, 8, H, "rgba(0,0,0,0.3)");
+				px(0, 0, W, 8, "rgba(0,0,0,0.3)");
+				px(0, H - 8, W, 8, "rgba(0,0,0,0.3)");
+			}
+
+			function render() {
+				ctx.clearRect(0, 0, W, H);
+				drawBg();
+				drawSlashLines();
+				drawFloorLine();
+				drawSilhouette(220, false);
+				drawSilhouette(700, true);
+				drawHitSparks();
+				drawKO();
+				drawButton();
+				drawTimer();
+				drawCRT();
+				t++;
+				requestAnimationFrame(render);
+			}
+
+			canvas.addEventListener("mousemove", (e) => {
+				const r = canvas.getBoundingClientRect();
+				const mx = (e.clientX - r.left) * (W / r.width);
+				const my = (e.clientY - r.top) * (H / r.height);
+				hovBtn = mx >= BX && mx <= BX + BW && my >= BY && my <= BY + BH;
+			});
+			canvas.addEventListener("mouseleave", () => (hovBtn = false));
+			canvas.addEventListener("click", (e) => {
+				const r = canvas.getBoundingClientRect();
+				const mx = (e.clientX - r.left) * (W / r.width);
+				const my = (e.clientY - r.top) * (H / r.height);
+				if (mx >= BX && mx <= BX + BW && my >= BY && my <= BY + BH)
+					window.location.reload();
+			});
+
+			render();
+		}
 		// @ts-nocheck
 		// 1. 初始化狀態與位置物件
 		const keys = {};
@@ -400,8 +611,9 @@
 				// 使用 setTimeout 替代未定義的 delay
 				container.removeChild(container.lastElementChild);
 				setTimeout(() => {
-					alert("遊戲結束！");
-					window.location.reload();
+					// alert("遊戲結束！");
+					// window.location.reload();
+					showGameOver();
 				}, 500);
 				return; // 遊戲結束後不再執行無敵狀態邏輯
 			}
@@ -448,7 +660,9 @@
 			pos.x = Math.max(0, Math.min(800, pos.x + stepDistance));
 			box.style.left = pos.x + "px";
 			box.classList.add(
-				direction === "right" ? "is-stepping-right" : "is-stepping-left",
+				direction === "right"
+					? "is-stepping-right"
+					: "is-stepping-left",
 			);
 			setTimeout(() => {
 				box.classList.remove("is-stepping-left", "is-stepping-right");
@@ -479,7 +693,11 @@
 
 				state.time = now;
 				if (state.count === 2) {
-					performStep(boxId, pos, key === rightKey ? "right" : "left");
+					performStep(
+						boxId,
+						pos,
+						key === rightKey ? "right" : "left",
+					);
 					state.count = 0;
 				}
 			});
@@ -492,32 +710,70 @@
 				.catch((e) => console.log("等待使用者互動後才能播放音效"));
 		}
 		// 2. 移動系統
+		// function updateBox(id, map, pos) {
+		// 	const box = document.getElementById(id);
+
+		// 	// 如果被鎖定（攻擊中），直接停止所有移動與動畫邏輯
+		// 	if (pos.isLocked || pos.isHit) {
+		// 		box.classList.remove("is-walking-left", "is-walking-right");
+		// 		return;
+		// 	}
+
+		// 	// 以下是正常的移動邏輯
+		// 	const speed = 4;
+		// 	const movingLeft = keys[map.left] && !keys[map.right];
+		// 	const movingRight = keys[map.right] && !keys[map.left];
+
+		// 	if (movingLeft) {
+		// 		pos.x -= speed;
+		// 		box.classList.remove("is-walking-right");
+		// 		if (!box.classList.contains("is-walking-left"))
+		// 			box.classList.add("is-walking-left");
+		// 	} else if (movingRight) {
+		// 		pos.x += speed;
+		// 		box.classList.remove("is-walking-left");
+		// 		if (!box.classList.contains("is-walking-right"))
+		// 			box.classList.add("is-walking-right");
+		// 	} else {
+		// 		box.classList.remove("is-walking-left", "is-walking-right");
+		// 	}
+
+		// 	pos.x = Math.max(0, Math.min(800, pos.x));
+		// 	box.style.left = pos.x + "px";
+		// }
 		function updateBox(id, map, pos) {
 			const box = document.getElementById(id);
 
-			// 如果被鎖定（攻擊中），直接停止所有移動與動畫邏輯
 			if (pos.isLocked || pos.isHit) {
-				box.classList.remove("is-walking-left", "is-walking-right");
+				// 只有當原本不是 idle 時才觸發 DOM 操作
+				if (pos.animState !== "idle") {
+					box.classList.remove("is-walking-left", "is-walking-right");
+					pos.animState = "idle";
+				}
 				return;
 			}
 
-			// 以下是正常的移動邏輯
 			const speed = 2;
 			const movingLeft = keys[map.left] && !keys[map.right];
 			const movingRight = keys[map.right] && !keys[map.left];
 
+			let nextAnim = "idle";
+
 			if (movingLeft) {
 				pos.x -= speed;
-				box.classList.remove("is-walking-right");
-				if (!box.classList.contains("is-walking-left"))
-					box.classList.add("is-walking-left");
+				nextAnim = "left";
 			} else if (movingRight) {
 				pos.x += speed;
-				box.classList.remove("is-walking-left");
-				if (!box.classList.contains("is-walking-right"))
-					box.classList.add("is-walking-right");
-			} else {
-				box.classList.remove("is-walking-left", "is-walking-right");
+				nextAnim = "right";
+			}
+
+			// 🌟 核心優化：只有當「這幀的動作」跟「上一幀」不一樣時，才去改 DOM Class！
+			if (pos.animState !== nextAnim) {
+				pos.animState = nextAnim; // 更新記憶體狀態
+
+				// 集中一次性處理 Class，避免瀏覽器重複計算排版
+				box.classList.toggle("is-walking-left", nextAnim === "left");
+				box.classList.toggle("is-walking-right", nextAnim === "right");
 			}
 
 			pos.x = Math.max(0, Math.min(800, pos.x));
@@ -620,10 +876,10 @@
 					// 攻擊判定盒出現
 					setTimeout(() => {
 						if (attacking) {
-									atk.style.display = "block";
-									counter?.classList.add("active");
-									attackWindow = true;
-								}
+							atk.style.display = "block";
+							counter?.classList.add("active");
+							attackWindow = true;
+						}
 					}, 200);
 					setTimeout(() => {
 						if (attacking) {
@@ -898,5 +1154,27 @@
 		setupAttack_kick("hitbox2", "box2", "attack_kick2", "i", "left", p2);
 		preventCollision("box1", "box2", p1, p2);
 		gameLoop();
+		(function () {
+			let debugOn = false;
+			const btn = document.getElementById("debugBtn");
+			const style = document.createElement("style");
+			style.id = "debugStyle";
+			document.head.appendChild(style);
+
+			btn.addEventListener("click", () => {
+				debugOn = !debugOn;
+				btn.textContent = debugOn ? "[ DEBUG: ON  ]" : "[ DEBUG: OFF ]";
+				btn.style.color = debugOn ? "#ff0" : "#0ff";
+				btn.style.borderColor = debugOn ? "#ff0" : "#0ff";
+				style.textContent = debugOn
+					? `
+      .hitbox   { background: rgba(255,0,0,0.35) !important; }
+      .counter-hitbox { display:block !important; background:rgba(0,255,0,0.25) !important; border:2px solid rgba(0,255,0,0.8) !important; }
+      .attack   { background: rgba(241,196,15,0.55) !important; }
+      .attack2  { background: rgba(241,100,15,0.55) !important; }
+    `
+					: "";
+			});
+		})();
 	</script>
 </body>

@@ -7,4 +7,9 @@ export default defineConfig({
 
   adapter: netlify(),
   integrations: [react()],
+  vite: {
+    server: {
+      allowedHosts: ['www.wotan.day', 'webhook.wotan.day']
+    }
+  }
 });
