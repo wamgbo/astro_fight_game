@@ -1,46 +1,31 @@
-# Astro Starter Kit: Basics
+# Astro 作品專案
 
+這是一個使用 Astro 框架開發的網頁作品。本專案已配置好基礎路由，包含公開的首頁與提供給老師評分審查的 Demo 頁面。
+
+## 🚀 專案路徑說明
+
+啟動專案後，您可以透過以下網址瀏覽對應的頁面：
+
+* **作品首頁 (`/`)**：本專案的核心首頁與主要內容。
+* **教師專用頁 (`/demo`)**：專門提供給 **Teacher** 評分、瀏覽功能展示或實驗功能的專屬路由。
+
+---
+
+## 🛠️ 快速開始與安裝步驟
+
+請確保您的電腦已安裝 [Node.js](https://nodejs.org/)，接著在終端機（Terminal）中依序執行以下指令：
+
+### 1. 安裝專案依賴
+在專案根目錄下執行此指令，安裝所有需要的套件：
 ```sh
-npm create astro@latest -- --template basics
+npm install
 ```
+2. 啟動本地開發伺服器
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+安裝完成後，執行以下指令來啟動專案：
+```Bash
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+npm run dev
 ```
-
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+啟動成功後，終端機會顯示本地網址 通常為 http://localhost:4321
+此時您即可透過瀏覽器造訪 / 與 /demo 路徑。
