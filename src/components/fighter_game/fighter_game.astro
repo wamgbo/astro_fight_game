@@ -332,6 +332,20 @@
 			opacity: 1;
 		}
 	}
+	.counterbox {
+		position: absolute;
+		width: 140px;
+		height: 320px;
+		left: 135px;
+		top: 340px;
+		display: none;
+		pointer-events: none;
+		/* background: rgba(0, 150, 255, 0.25); */
+		/* border: 2px solid rgba(0, 150, 255, 0.8); */
+	}
+	.counterbox.active {
+		display: block;
+	}
 </style>
 
 <body>
@@ -363,10 +377,12 @@
 			<div id="box1" class="box">
 				<div id="hitbox1" class="hitbox"></div>
 				<div id="counter1" class="counter-hitbox"></div>
+				<div id="counterbox1" class="counterbox"></div>
 			</div>
 			<div id="box2" class="box">
 				<div id="hitbox2" class="hitbox"></div>
 				<div id="counter2" class="counter-hitbox"></div>
+				<div id="counterbox2" class="counterbox"></div>
 			</div>
 
 			<div id="attack1" class="attack"></div>
@@ -753,7 +769,7 @@
 				return;
 			}
 
-			const speed = 2;
+			const speed = 3;
 			const movingLeft = keys[map.left] && !keys[map.right];
 			const movingRight = keys[map.right] && !keys[map.left];
 
@@ -818,9 +834,8 @@
 			setTimeout(() => {
 				target.classList.remove("is-hit");
 				Pos.isHit = false; // 🔥 解鎖：受擊時暫停移動與動k畫
-			}, 2000);
+			}, 400);
 		}
-		// 3. 攻擊與碰撞系統 (邏輯保持你的優化版) KICK
 		function setupAttack_kick(htbox, boxId, atkId, key, direction, pos) {
 			const box = document.getElementById(boxId);
 			const hbox = document.getElementById(htbox);
@@ -828,8 +843,12 @@
 			const counter = document.getElementById(
 				boxId === "box1" ? "counter1" : "counter2",
 			);
+			const counterbox = document.getElementById(
+				boxId === "box1" ? "counterbox1" : "counterbox2",
+			);
 			let attacking = false;
-			let attackWindow = false;
+
+			counter?.classList.add("active");
 
 			window.addEventListener("keydown", (e) => {
 				if (pos.isHit) return;
@@ -837,60 +856,61 @@
 					const now = performance.now();
 					if (now - pos.lastAttackTime < 600) return;
 					pos.lastAttackTime = now;
-					attackWindow = false;
-					pos.isLocked = true; // 🔥 強制鎖定：此時 updateBox 將無法移動
+					pos.isLocked = true;
 					attacking = true;
 					playSound("src/components/fighter_game/src/kick/1.wav");
-					// 0. 記錄原始位置
-					const originalX = pos.x;
-					const dashDistance = 119; // 想要瞬移的距離
 
-					// 1. 瞬間移動：攻擊開始時直接增加座標
+					const originalX = pos.x;
+					const dashDistance = 119;
 					pos.x +=
 						direction === "right" ? dashDistance : -dashDistance;
 					box.style.left = pos.x + "px";
-
 					box.classList.add("is-kicking");
 
-					// 2. 動畫結束後瞬間傳送回來
+					// ✅ 攻擊開始：關 hitbox，開 counterbox
+					hbox.style.display = "none";
+					counterbox?.classList.add("active");
+
 					setTimeout(() => {
-						hbox.style.display = "none"; // 確保攻擊判定盒在攻擊結束後隱藏
-						counter?.classList.remove("active");
-						// 瞬間傳送回原位
 						pos.x = originalX;
 						box.style.left = pos.x + "px";
-
 						atk.style.display = "none";
-						box.classList.remove("is-attacking");
-						box.classList.remove("is-walking");
-						box.classList.remove("is-kicking");
-
+						box.classList.remove(
+							"is-attacking",
+							"is-walking",
+							"is-kicking",
+						);
 						box.style.animation = "none";
 						box.offsetHeight;
 						box.style.animation = "";
 						attacking = false;
-						pos.isLocked = false; // 🔥 解鎖：攻擊結束後恢復移動能力
-						hbox.style.display = "block"; // 確保攻擊判定盒在攻擊結束後隱藏
-					}, 499); // 與 CSS 動畫長度對應
+						pos.isLocked = false;
+						// ✅ 攻擊結束：恢復 hitbox，關 counterbox，counter 恢復
+						hbox.style.display = "block";
+						counterbox?.classList.remove("active");
+						counter?.classList.add("active");
+					}, 499);
 
-					// 攻擊判定盒出現
+					// ✅ 出拳 frame：關閉 counterbox 和 counter
 					setTimeout(() => {
 						if (attacking) {
 							atk.style.display = "block";
-							counter?.classList.add("active");
-							attackWindow = true;
+							counter?.classList.remove("active");
+							counterbox?.classList.remove("active");
 						}
 					}, 200);
+
+					// ✅ 收拳：恢復 counterbox，關閉 atk
 					setTimeout(() => {
 						if (attacking) {
-							counter?.classList.remove("active");
-							attackWindow = false;
+							atk.style.display = "none";
+							counterbox?.classList.add("active");
+							counter?.classList.add("active");
 						}
-					}, 210);
+					}, 340);
 				}
 			});
 
-			// 追蹤器維持不變
 			function follow() {
 				atk.style.left =
 					(direction === "right" ? pos.x + 199 : pos.x) + "px";
@@ -899,17 +919,19 @@
 			}
 			follow();
 		}
-		// 2. 攻擊與碰撞系統 (邏輯保持你的優化版)
-		function setupAttack(boxId, atkId, key, direction, pos) {
-			if (pos.isHit) return;
 
+		function setupAttack(boxId, atkId, key, direction, pos) {
 			const box = document.getElementById(boxId);
 			const atk = document.getElementById(atkId);
 			const counter = document.getElementById(
 				boxId === "box1" ? "counter1" : "counter2",
 			);
-
+			const counterbox = document.getElementById(
+				boxId === "box1" ? "counterbox1" : "counterbox2",
+			);
 			let startTime = 0;
+
+			counter?.classList.add("active");
 
 			window.addEventListener("keydown", (e) => {
 				if (pos.isHit || pos.isLocked) return;
@@ -918,10 +940,7 @@
 					if (now - pos.lastAttackTime < 600) return;
 					pos.lastAttackTime = now;
 					pos.isLocked = true;
-					startTime = performance.now(); // 🔥 這裡必須更新 startTime
-
-					// ... (原本的音效與瞬間移動邏輯保持不變)
-					pos.isLocked = true;
+					startTime = performance.now();
 					playSound("src/components/fighter_game/src/attack/1.wav");
 
 					const originalX = pos.x;
@@ -929,13 +948,18 @@
 					box.style.left = pos.x + "px";
 					box.classList.add("is-attacking");
 
+					// ✅ 攻擊開始：開 counterbox
+					counterbox?.classList.add("active");
+
 					setTimeout(() => {
 						pos.x = originalX;
 						box.style.left = pos.x + "px";
 						atk.style.display = "none";
-						counter?.classList.remove("active");
 						box.classList.remove("is-attacking");
 						pos.isLocked = false;
+						// ✅ 攻擊結束：關 counterbox，counter 恢復
+						counterbox?.classList.remove("active");
+						counter?.classList.add("active");
 					}, 400);
 				}
 			});
@@ -943,24 +967,27 @@
 			function follow(now) {
 				if (pos.isLocked) {
 					const elapsed = now - startTime;
-
-					// 1. 控制攻擊盒的顯示與偏移
 					let kickExtension = 0;
 
 					if (elapsed < 100) {
-						atk.style.display = "none"; // 蓄力階段不顯示
+						// 蓄力：counterbox 開，hitbox 替代
+						atk.style.display = "none";
 						counter?.classList.remove("active");
+						counterbox?.classList.add("active");
 					} else if (elapsed >= 100 && elapsed < 280) {
-						atk.style.display = "block"; // 踢擊階段顯示
-						counter?.classList.add("active");
-						kickExtension =
-							pos.heartBar === "heart1-bar" ? 30 : -200; // 根據玩家不同增加額外距離
-					} else {
-						atk.style.display = "none"; // 收回階段隱藏
+						// ✅ 出拳 frame：關 counterbox，開攻擊盒
+						atk.style.display = "block";
 						counter?.classList.remove("active");
+						counterbox?.classList.remove("active");
+						kickExtension =
+							pos.heartBar === "heart1-bar" ? 30 : -200;
+					} else {
+						// 收拳：counterbox 恢復
+						atk.style.display = "none";
+						counter?.classList.add("active");
+						counterbox?.classList.add("active");
 					}
 
-					// 2. 計算 X 軸位置
 					const baseOffset = direction === "right" ? 209 : 20;
 					const finalX =
 						direction === "right"
@@ -970,8 +997,9 @@
 					atk.style.left = finalX + "px";
 					atk.style.top = pos.y + 199 + "px";
 				} else {
-					// 非攻擊狀態強制隱藏
 					atk.style.display = "none";
+					// 非攻擊狀態：確保 counterbox 關閉
+					counterbox?.classList.remove("active");
 				}
 
 				requestAnimationFrame(follow);
@@ -1024,6 +1052,64 @@
 			);
 		}
 
+		let isKnockout = false; // 全域變數，放在 const keys = {}; 旁邊
+
+		function knockback(posA, posB, boxIdA, boxIdB, isKO = false) {
+			// 已經 knockout 就不再觸發
+			if (isKnockout) return;
+
+			posA.isLocked = true;
+			posB.isLocked = true;
+			posA.isHit = true;
+			posB.isHit = true;
+
+			const boxA = document.getElementById(boxIdA);
+			const boxB = document.getElementById(boxIdB);
+
+			const aIsLeft = posA.x < posB.x;
+			const targetAx = aIsLeft ? 0 : 800;
+			const targetBx = aIsLeft ? 800 : 0;
+
+			const duration = 400;
+			const steps = 30;
+			const interval = duration / steps;
+			const startAx = posA.x;
+			const startBx = posB.x;
+
+			let step = 0;
+			const timer = setInterval(() => {
+				step++;
+				const progress = step / steps;
+				const ease = 1 - Math.pow(1 - progress, 3);
+
+				posA.x = Math.round(startAx + (targetAx - startAx) * ease);
+				posB.x = Math.round(startBx + (targetBx - startBx) * ease);
+				boxA.style.left = posA.x + "px";
+				boxB.style.left = posB.x + "px";
+
+				if (step >= steps) {
+					clearInterval(timer);
+					posA.x = targetAx;
+					posB.x = targetBx;
+					boxA.style.left = posA.x + "px";
+					boxB.style.left = posB.x + "px";
+
+					if (isKO) {
+						// ✅ KO 狀態：永久鎖定，不解鎖
+						isKnockout = true;
+						console.log("KNOCKOUT！雙方永久鎖定！");
+					} else {
+						// 普通退場：200ms 後解鎖
+						setTimeout(() => {
+							posA.isLocked = false;
+							posB.isLocked = false;
+							posA.isHit = false;
+							posB.isHit = false;
+						}, 200);
+					}
+				}
+			}, interval);
+		}
 		// 4. 遊戲主迴圈
 		// 攻擊冷卻追蹤 (防止同一攻擊在多幀內重複觸發傷害)
 		const attackCooldown = {
@@ -1041,20 +1127,36 @@
 
 			// ========== 玩家2 受傷檢查 ==========
 			if (p2.isInvincible === false) {
-				// 優先度 1: 懲罰反擊 (擊中 counter2)
+				// 優先度 1: 懲罰反擊 (打到 counter2 → 玩家1扣血)
 				if (
 					(hitCheck("attack1", "counter2") &&
 						now - attackCooldown.attack1 > COOLDOWN_MS) ||
 					(hitCheck("attack_kick1", "counter2") &&
 						now - attackCooldown.attack_kick1 > COOLDOWN_MS)
 				) {
-					console.log("玩家1觸發懲罰反擊！玩家1扣血！");
-					spawnCounterEffect(p1.x + 200, p1.y + 200, "box1", p1);
-					subHearts(p1); // 玩家1受罰
+					console.log("玩家1打到反擊框！玩家1受罰扣血！");
+					spawnCounterEffect(p2.x + 200, p2.y + 200, "box2", p1);
+					subHearts(p2);
 					attackCooldown.attack1 = now;
 					attackCooldown.attack_kick1 = now;
+					knockback(p1, p2, "box1", "box2");
 				}
-				// 優先度 2: 相互攻擊 (攻擊互相碰撞)
+
+				// 優先度 2: 拳打腳 counter (attack1 打到 counterbox2 → 玩家1回血)
+				// ✅ 只有拳(attack)打到腳(counterbox)才觸發，腳打腳不算
+				else if (
+					hitCheck("attack1", "counterbox2") &&
+					now - attackCooldown.attack1 > COOLDOWN_MS
+				) {
+					console.log("玩家1的拳打到玩家2的腳！玩家1 counter 回血！");
+					spawnHitEffect(p2.x + 200, p2.y + 200, "box2", p2);
+					subHearts(p2);
+					conunterHearts(p1);
+					attackCooldown.attack1 = now;
+					knockback(p1, p2, "box1", "box2");
+				}
+
+				// 優先度 3: 攻擊互碰
 				else if (
 					(hitCheck("attack1", "attack2") &&
 						now - attackCooldown.attack1 > COOLDOWN_MS) ||
@@ -1066,44 +1168,63 @@
 						now - attackCooldown.attack_kick1 > COOLDOWN_MS &&
 						p2.isLocked === true)
 				) {
-					console.log("攻擊相互碰撞！雙方都扣血！");
+					console.log("攻擊互碰！雙方扣血！");
 					spawnCounterEffect(p2.x + 200, p2.y + 200, "box2", p2);
-					conunterHearts(p1); // 玩家1獲得加成
-					subHearts(p2); // 玩家2扣血
+					conunterHearts(p1);
+					subHearts(p2);
 					attackCooldown.attack1 = now;
 					attackCooldown.attack_kick1 = now;
+					knockback(p1, p2, "box1", "box2");
 				}
-				// 優先度 3: 正常命中 (擊中 hitbox2)
+
+				// 優先度 4: 正常命中 hitbox2
 				else if (
 					(hitCheck("attack1", "hitbox2") &&
 						now - attackCooldown.attack1 > COOLDOWN_MS) ||
 					(hitCheck("attack_kick1", "hitbox2") &&
 						now - attackCooldown.attack_kick1 > COOLDOWN_MS)
 				) {
-					console.log("玩家1攻擊命中玩家2！");
+					console.log("玩家1命中玩家2！");
 					subHearts(p2);
 					spawnHitEffect(p2.x + 200, p2.y + 200, "box2", p2);
 					attackCooldown.attack1 = now;
 					attackCooldown.attack_kick1 = now;
+					knockback(p1, p2, "box1", "box2");
 				}
 			}
 
 			// ========== 玩家1 受傷檢查 ==========
 			if (p1.isInvincible === false) {
-				// 優先度 1: 懲罰反擊 (擊中 counter1)
+				// 優先度 1: 懲罰反擊 (打到 counter1 → 玩家2扣血)
 				if (
 					(hitCheck("attack2", "counter1") &&
 						now - attackCooldown.attack2 > COOLDOWN_MS) ||
 					(hitCheck("attack_kick2", "counter1") &&
 						now - attackCooldown.attack_kick2 > COOLDOWN_MS)
 				) {
-					console.log("玩家2觸發懲罰反擊！玩家2扣血！");
-					spawnCounterEffect(p2.x + 200, p2.y + 200, "box2", p2);
-					subHearts(p2); // 玩家2受罰
+					console.log("玩家2打到反擊框！玩家2受罰扣血！");
+					spawnCounterEffect(p1.x + 200, p1.y + 200, "box1", p1);
+					subHearts(p1);
 					attackCooldown.attack2 = now;
 					attackCooldown.attack_kick2 = now;
+					knockback(p1, p2, "box1", "box2");
 				}
-				// 優先度 2: 相互攻擊 (攻擊互相碰撞)
+
+				// 優先度 2: 拳打腳 counter (attack2 打到 counterbox1 → 玩家2回血)
+				// ✅ 只有拳(attack)打到腳(counterbox)才觸發，腳打腳不算
+				else if (
+					hitCheck("attack2", "counterbox1") &&
+					now - attackCooldown.attack2 > COOLDOWN_MS
+				) {
+					console.log("玩家2的拳打到玩家1的腳！玩家2 counter 回血！");
+					spawnHitEffect(p1.x + 200, p1.y + 200, "box1", p1);
+					subHearts(p1);
+					conunterHearts(p2);
+					attackCooldown.attack2 = now;
+					knockback(p1, p2, "box1", "box2");
+				}
+
+				// 優先度 3: 攻擊互碰
 				else if (
 					(hitCheck("attack2", "attack1") &&
 						now - attackCooldown.attack2 > COOLDOWN_MS) ||
@@ -1115,33 +1236,31 @@
 						now - attackCooldown.attack_kick2 > COOLDOWN_MS &&
 						p1.isLocked === true)
 				) {
-					console.log("攻擊相互碰撞！雙方都扣血！");
+					console.log("攻擊互碰！雙方扣血！");
 					spawnCounterEffect(p1.x + 200, p1.y + 200, "box1", p1);
-					conunterHearts(p2); // 玩家2獲得加成
-					subHearts(p1); // 玩家1扣血
+					conunterHearts(p2);
+					subHearts(p1);
 					attackCooldown.attack2 = now;
 					attackCooldown.attack_kick2 = now;
+					knockback(p1, p2, "box1", "box2");
 				}
-				// 優先度 3: 正常命中 (擊中 hitbox1)
+
+				// 優先度 4: 正常命中 hitbox1
 				else if (
 					(hitCheck("attack2", "hitbox1") &&
 						now - attackCooldown.attack2 > COOLDOWN_MS) ||
 					(hitCheck("attack_kick2", "hitbox1") &&
 						now - attackCooldown.attack_kick2 > COOLDOWN_MS)
 				) {
-					console.log("玩家2攻擊命中玩家1！");
+					console.log("玩家2命中玩家1！");
 					subHearts(p1);
 					spawnHitEffect(p1.x + 200, p1.y + 200, "box1", p1);
 					attackCooldown.attack2 = now;
 					attackCooldown.attack_kick2 = now;
+					knockback(p1, p2, "box1", "box2");
 				}
 			}
-			// if (
-			// 	attack1.style.display === "none" ||
-			// 	attack_kick1.style.display === "none"
-			// ) {
-			// 	player1Gethit = false;
-			// }
+
 			requestAnimationFrame(gameLoop);
 		}
 
